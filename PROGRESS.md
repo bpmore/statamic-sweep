@@ -13,7 +13,7 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 ## Phase 1: Foundations
 
 - [x] Scaffold: package, service provider, config, Pest on `AddonTestCase`, arch test, CI matrix, Vite build as in Lifecycle, CLAUDE.md
-- [ ] Permissions (`use sweep`, `apply sweep`, `undo sweep`, `manage sweep presets`) and a CP nav item under Tools, gated by `use sweep`
+- [x] Permissions (`use sweep`, `apply sweep`, `undo sweep`, `manage sweep presets`) and a CP nav item under Tools, gated by `use sweep`
 
 ## Phase 2: The engine (plain PHP in `src/Engine`, no Statamic)
 
@@ -84,3 +84,8 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 - Resolved `statamic/cms` 6.38.0 and Laravel 13 on PHP 8.4. The conventions say Laravel 12; Statamic 6 allows both, and PHP 8.2 resolves Laravel 12. CI runs both through the PHP matrix and a lowest-dependencies job.
 - Sweeps are YAML on disk, as the spec says, so Sweep needs no database at all.
 - Static cache: Statamic's own `Statamic\StaticCaching\Invalidate` listener is queued and runs on `EntrySaved`, honouring the site's invalidation rules. Keeping it running (rather than suppressing it and invalidating a URL list ourselves) is likely the safer route. Decide in the static cache task.
+
+### 2026-10-26: Permissions and nav
+- `apply sweep`, `undo sweep` and `manage sweep presets` are children of `use sweep` in the roles screen. `Auth\Permissions` still checks `use sweep` alongside each, since a role file edited by hand can hold a child alone.
+- UI strings live in `lang/en/messages.php` as `sweep::messages.<key>`. Statamic's translator sends namespaced addon strings to the CP, so Vue uses the same keys. The test reading the permission group label as "Sweep" proves the file is loaded.
+- `Nav::build()` is empty under Testbench outside a real CP request; the nav test runs the extension against a fresh Nav, as Lifecycle's does.
