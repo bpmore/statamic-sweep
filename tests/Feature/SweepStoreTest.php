@@ -63,7 +63,7 @@ it('keeps strings byte for byte, whatever they hold', function () {
         "\ttabs\t",
         '123', '0x1F', '1e3', 'null', '~', 'true', 'no', 'yes',
         '- a dash', 'key: value', '# not a comment', "'quoted'", '"double"', '{a: b}', '[a]', '!tag', '&anchor', '*alias', '%percent', '@at', '`tick`',
-        "nul\0byte", 'ünïcödé — and emoji 🧹', '',
+        "nul\0byte", 'ünïcödé · and emoji 🧹', '',
         str_repeat('long ', 2000),
     ];
 

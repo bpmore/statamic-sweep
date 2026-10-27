@@ -63,7 +63,7 @@ function fieldValues(string $id): array
 it('puts every untouched item back byte for byte, and lists the edited ones as conflicts: acceptance 5', function () {
     $originals = [
         'a' => ['title' => 'Acme, ACME and acme', 'intro' => "Line one Acme\r\nLine two acme  \r\n\r\n", 'notes' => "  # Acme\n\n\tTabbed acme\n\n\n"],
-        'b' => ['title' => 'Ünïcödé Acme — “quoted” acme 🧹', 'body' => [
+        'b' => ['title' => 'Ünïcödé Acme · “quoted” acme 🧹', 'body' => [
             ['type' => 'paragraph', 'content' => [
                 ['type' => 'text', 'text' => 'Acme '],
                 ['type' => 'text', 'text' => 'ACME', 'marks' => [['type' => 'bold'], ['type' => 'link', 'attrs' => ['href' => 'https://acme.test/?q=acme&x=1']]]],

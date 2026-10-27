@@ -36,7 +36,7 @@ describe('literal', function () {
     });
 
     it('reports byte offsets that substr agrees with, after multibyte text', function () {
-        $subject = 'Café — Acme';
+        $subject = 'Café · Acme';
         $hit = (new Matcher(new Query('Acme')))->find($subject)[0];
 
         expect(substr($subject, $hit->offset, $hit->length))->toBe('Acme')
@@ -166,7 +166,7 @@ describe('revert', function () {
         'longer replacement' => ['Acme and acme and ACME', 'acme', 'Apex Industries', Mode::Literal],
         'shorter replacement' => ['Acme Corporation, Acme Corporation', 'Acme Corporation', 'A', Mode::Literal],
         'empty replacement' => ['[caption]x[/caption] y [caption]', '\[\/?caption\]', '', Mode::Regex],
-        'multibyte' => ['Café Acme — Ünï Acme', 'acme', 'Äpëx', Mode::Literal],
+        'multibyte' => ['Café Acme · Ünï Acme', 'acme', 'Äpëx', Mode::Literal],
         'groups' => ['555-1234 and 555-9876', '(\d{3})-(\d{4})', '$2.$1', Mode::Regex],
     ]);
 
