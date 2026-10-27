@@ -4,6 +4,15 @@ What changed in each release, and what you have to do about it.
 
 Versions are `MAJOR.MINOR.PATCH`.
 
+## 1.0.1 - 2026-10-27
+
+Wording fixes. Nothing to do when updating.
+
+- Counts read correctly for one: "1 match in 1 item", not "1 matches in 1
+  items", in the history, the preview, the apply message and `sweep:prune`.
+- A split match whose text starts at the beginning of a field now has a space
+  after its label.
+
 ## 1.0.0 - 2026-10-27
 
 The first release.

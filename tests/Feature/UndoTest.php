@@ -195,6 +195,16 @@ it('makes one Git commit for the undo too', function () {
     Queue::assertPushed(CommitJob::class, fn (CommitJob $job) => $job->message === 'Undo sweep: Acme → Apex');
 });
 
+it('says one sweep and one day, not one sweeps and one days', function () {
+    config(['sweep.undo_days' => 1]);
+    Entry::make()->id('a')->collection('pages')->slug('a')->data(['title' => 'Acme'])->save();
+    Carbon::setTestNow('2026-09-01 09:00:00');
+    sweepAndApply();
+    Carbon::setTestNow('2026-09-05 09:00:00');
+
+    $this->artisan('sweep:prune')->expectsOutputToContain('Removed undo data from 1 sweep older than 1 day.')->assertSuccessful();
+});
+
 it('prunes undo data after the undo period and keeps the sweep in the history', function () {
     config(['sweep.undo_days' => 30]);
     Entry::make()->id('a')->collection('pages')->slug('a')->data(['title' => 'Acme'])->save();
@@ -204,7 +214,7 @@ it('prunes undo data after the undo period and keeps the sweep in the history', 
     Carbon::setTestNow('2026-10-20 09:00:00');
     $recent = app(Sweeps::class)->start(new Query('Apex', 'Acme'), new Scope, null, now: true);
 
-    $this->artisan('sweep:prune')->expectsOutputToContain('2 sweeps')->assertSuccessful();
+    $this->artisan('sweep:prune')->expectsOutputToContain('2 sweeps older than 30 days')->assertSuccessful();
 
     $store = app(SweepStore::class);
 

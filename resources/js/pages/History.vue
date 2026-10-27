@@ -47,7 +47,7 @@ const when = (iso) => (iso ? new Date(iso).toLocaleString() : '');
                     <TableCell><code>{{ sweep.replace }}</code></TableCell>
                     <TableCell>{{ sweep.scope }}</TableCell>
                     <TableCell>
-                        {{ __('sweep::messages.history_counts', { matches: sweep.tally.matches, items: sweep.tally.matched_items }) }}
+                        {{ __('sweep::messages.history_counts', { matches: __n('sweep::messages.n_matches', sweep.tally.matches, { count: sweep.tally.matches }), items: __n('sweep::messages.n_items', sweep.tally.matched_items, { count: sweep.tally.matched_items }) }) }}
                         <template v-if="sweep.apply_tally.applied !== undefined">
                             <br />{{ __('sweep::messages.history_applied_count', { count: sweep.apply_tally.applied }) }}
                         </template>

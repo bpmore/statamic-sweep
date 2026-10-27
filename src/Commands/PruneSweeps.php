@@ -19,7 +19,13 @@ class PruneSweeps extends Command
 
     public function handle(Sweeps $sweeps): int
     {
-        $this->components->info(__('sweep::messages.cli_pruned', ['count' => $sweeps->prune(), 'days' => (int) config('sweep.undo_days', 30)]));
+        $count = $sweeps->prune();
+        $days = (int) config('sweep.undo_days', 30);
+
+        $this->components->info(__('sweep::messages.cli_pruned', [
+            'sweeps' => trans_choice('sweep::messages.n_sweeps', $count, ['count' => $count]),
+            'days' => trans_choice('sweep::messages.n_days', $days, ['count' => $days]),
+        ]));
 
         return self::SUCCESS;
     }

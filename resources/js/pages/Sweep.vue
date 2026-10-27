@@ -16,6 +16,9 @@ const props = defineProps({
 });
 
 const t = getCurrentInstance().proxy.__;
+const tn = getCurrentInstance().proxy.__n;
+const itemCount = (count) => tn('sweep::messages.n_items', count, { count });
+const matchCount = (count) => tn('sweep::messages.n_matches', count, { count });
 const working = computed(() => props.sweep.working);
 const confirming = ref(null); // 'apply' | 'undo' | null
 
@@ -37,15 +40,15 @@ const statusText = computed(() => {
     const p = s.progress ?? {};
     switch (s.status) {
         case 'searching':
-            return t('sweep::messages.live_searching', { done: p.done ?? 0, found: s.items });
+            return t('sweep::messages.live_searching', { done: itemCount(p.done ?? 0), found: s.items });
         case 'applying':
-            return t('sweep::messages.live_applying', { done: p.done ?? 0, total: p.total ?? s.items });
+            return t('sweep::messages.live_applying', { done: p.done ?? 0, total: itemCount(p.total ?? s.items) });
         case 'undoing':
-            return t('sweep::messages.live_undoing', { done: p.done ?? 0, total: p.total ?? s.items });
+            return t('sweep::messages.live_undoing', { done: p.done ?? 0, total: itemCount(p.total ?? s.items) });
         case 'previewed':
-            return t('sweep::messages.live_previewed', { matches: s.tally.matches, items: s.tally.matched_items });
+            return t('sweep::messages.live_previewed', { matches: matchCount(s.tally.matches), items: itemCount(s.tally.matched_items) });
         case 'applied':
-            return t('sweep::messages.live_applied', { count: s.apply_tally.applied ?? 0 });
+            return tn('sweep::messages.live_applied', s.apply_tally.applied ?? 0, { count: s.apply_tally.applied ?? 0 });
         case 'undone':
             return t('sweep::messages.live_undone');
         case 'partially_undone':
@@ -198,7 +201,7 @@ const badge = (status) => ({
                 <template v-if="mayApply && sweep.status === 'previewed' && sweep.items > 0">
                     <Button v-if="confirming !== 'apply'" data-sweep-focus="open-apply" variant="primary" :text="__('sweep::messages.apply_button')" @click="ask('apply')" />
                     <template v-else>
-                        <Text>{{ __('sweep::messages.apply_confirm', { items: sweep.tally.matched_items }) }}</Text>
+                        <Text>{{ __('sweep::messages.apply_confirm', { items: itemCount(sweep.tally.matched_items) }) }}</Text>
                         <Button data-sweep-focus="confirm-apply" variant="primary" :text="__('sweep::messages.apply_confirm_button')" @click="act('apply')" />
                         <Button variant="ghost" :text="__('sweep::messages.cancel')" @click="cancel('apply')" />
                     </template>
@@ -273,8 +276,7 @@ const badge = (status) => ({
                     <Alert type="warning" :heading="__('sweep::messages.split_heading')" :text="__('sweep::messages.split_help')" />
                     <ul class="mt-2 space-y-1">
                         <li v-for="(split, s) in item.splits" :key="s" class="text-sm">
-                            <span class="font-medium">{{ split.label }}:</span>
-                            <span class="font-mono">{{ split.context }}</span>
+                            <span class="font-medium">{{ split.label }}:</span>{{ ' ' }}<span class="font-mono">{{ split.context }}</span>
                             <a v-if="item.edit_url" :href="item.edit_url" class="ml-2 underline">{{ __('sweep::messages.edit_by_hand') }}</a>
                         </li>
                     </ul>
