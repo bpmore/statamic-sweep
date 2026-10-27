@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Bpmore\Sweep\Tests\TestCase;
+use Statamic\Facades\Site;
 
 // Everything under Feature gets a booted Statamic. The engine is plain PHP
 // and is tested under Unit without one, so it stays fast.
@@ -71,4 +72,19 @@ function referencedNames(string $file): array
     }
 
     return $names;
+}
+
+/**
+ * Turns this test's site into a multisite with the given site handles. Three
+ * or more sites, and any second site, are a Pro feature.
+ *
+ * @param  list<string>  $handles
+ */
+function useSites(array $handles = ['en', 'fr']): void
+{
+    config(['statamic.editions.pro' => true, 'statamic.system.multisite' => true]);
+
+    Site::setSites(collect($handles)->mapWithKeys(fn (string $handle, int $i): array => [
+        $handle => ['name' => strtoupper($handle), 'url' => $i === 0 ? '/' : "/{$handle}/", 'locale' => $handle === 'fr' ? 'fr_FR' : 'en_US'],
+    ])->all());
 }
