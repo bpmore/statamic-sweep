@@ -9,6 +9,8 @@ use Bpmore\Sweep\Engine\Change;
 use Bpmore\Sweep\Engine\Matcher;
 use Bpmore\Sweep\Engine\Query;
 use Bpmore\Sweep\Engine\Walker;
+use Bpmore\Sweep\Sweeps\Sweeps;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Statamic\Facades\Asset;
 use Statamic\Facades\AssetContainer;
@@ -68,4 +70,21 @@ it('writes metadata without moving or renaming the file', function () {
     expect($asset->get('alt'))->toBe('Apex logo')
         ->and($asset->get('credit'))->toBe('Acme design team')
         ->and(Storage::disk('images')->exists('logo.png'))->toBeTrue();
+});
+
+it('never changes asset metadata in a sweep scoped to one site, end to end: acceptance 9 as decided in D3', function () {
+    useSites(['en', 'fr']);
+    config(['sweep.path' => $path = storage_path('framework/testing/sweep-'.uniqid())]);
+
+    $sweeps = app(Sweeps::class);
+    $sweep = $sweeps->start(new Query('Acme', 'Apex'), new Scope(sites: ['fr']), null, now: true);
+    $sweeps->apply($sweep, null, now: true);
+
+    // Unscoped, the same search does reach the asset.
+    $all = $sweeps->start(new Query('Acme', 'Apex'), new Scope, null, now: true);
+    File::deleteDirectory($path);
+
+    expect($sweep->tally->matchedItems)->toBe(0)
+        ->and(Asset::find('images::logo.png')->get('alt'))->toBe('Acme logo')
+        ->and($all->tally->matchedItems)->toBe(1);
 });
