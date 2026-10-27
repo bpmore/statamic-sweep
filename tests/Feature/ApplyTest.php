@@ -116,8 +116,9 @@ it('skips and flags an entry edited between preview and apply: acceptance 4', fu
     makePage('untouched', ['title' => 'Acme two']);
     $sweep = previewSweep();
 
-    // An editor changes a different field of one entry.
-    Entry::find('edited')->set('intro', 'New intro')->save();
+    // An editor changes a different field of one entry, one Sweep has no
+    // match in.
+    Entry::find('edited')->set('body', [['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => 'New words']]]])->save();
 
     $sweep = applySweep($sweep);
 

@@ -70,7 +70,7 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 
 ## Phase 8: Ship
 
-- [ ] Fixtures: multisite, Eloquent driver, Bard with nested sets, Replicator inside Grid inside Bard
+- [x] Fixtures: multisite, Eloquent driver, Bard with nested sets, Replicator inside Grid inside Bard
 - [ ] Performance: 10,000 entries searched in under 60 seconds
 - [ ] axe scan and a keyboard-only walk of every CP screen on `statamic-dev`
 - [ ] README, editor docs in `docs/`, CHANGELOG, `docs/marketplace.md`, the em dash grep
@@ -169,3 +169,10 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 - Backups of the site's composer files from before the update sit beside them: `composer.json.before-statamic-6.38` and `composer.lock.before-statamic-6.38`.
 - Checked signed in as a super admin: dashboard, collections, utilities, Lifecycle, and Sweep's search, history and presets pages all return 200. Logged out, the site's home page and CP login return 200.
 - Brent tried Sweep on statamic-dev's real content the same day: looks good.
+
+### 2026-10-26: Fixtures and the Eloquent driver
+- `tests/Eloquent` runs Sweep with entries, terms, globals, navigation, assets and revisions in a database through `statamic/eloquent-driver` (dev only), set up the way the driver's own tests are. Preview, apply, undo and the changed-since-preview check all pass there, including a CRLF-and-trailing-spaces string through the database and back.
+- **Found and fixed:** on the Eloquent driver, an entry loaded by a query carries `updated_at` in its data and the same entry loaded by id does not. The whole-data fingerprint therefore flagged every untouched entry as "changed since preview". The fingerprint now covers the item's blueprint fields only (`Fingerprint::ofFields`). An editor's change is always to a blueprint field, so acceptance 4 still holds; the tests that faked an edit to a field outside the blueprint now edit a real one. Mutation-checked.
+- Driver quirks met in setup, not Sweep's: entries need `UuidEntryModel` for string ids, and a brand-new navigation tree saves with no branches the first time.
+- Every Statamic 6 release of the driver needs PHP 8.3. CI removes it on the PHP 8.2 jobs and runs `--exclude-group=eloquent` there.
+- Multisite, Bard with nested sets and Replicator in Grid in Bard were already covered by earlier tests (Entries, TermsAndGlobals, Navigation, Assets, Walker, Apply).

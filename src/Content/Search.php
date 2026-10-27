@@ -66,8 +66,10 @@ final class Search
         $tally->searched++;
         $data = $item->data();
 
+        $fields = $item->fields($tree);
+
         try {
-            $result = $walker->walk($data, $item->fields($tree));
+            $result = $walker->walk($data, $fields);
         } catch (RuntimeException $e) {
             $tally->failures[] = ['reference' => $item->reference(), 'title' => $item->title(), 'message' => $e->getMessage()];
 
@@ -82,6 +84,6 @@ final class Search
         $tally->matches += $result->matchCount();
         $tally->splits += count($result->splits);
 
-        $found($item, $result, Fingerprint::of($data));
+        $found($item, $result, Fingerprint::ofFields($data, $fields));
     }
 }

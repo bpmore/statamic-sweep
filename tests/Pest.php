@@ -2,12 +2,18 @@
 
 declare(strict_types=1);
 
+use Bpmore\Sweep\Tests\EloquentTestCase;
 use Bpmore\Sweep\Tests\TestCase;
 use Statamic\Facades\Site;
 
 // Everything under Feature gets a booted Statamic. The engine is plain PHP
 // and is tested under Unit without one, so it stays fast.
 uses(TestCase::class)->in('Feature');
+
+// The same flows with content in a database, through statamic/eloquent-driver.
+// Every Statamic 6 version of the driver needs PHP 8.3, so CI removes it and
+// skips this group on PHP 8.2.
+uses(EloquentTestCase::class)->group('eloquent')->in('Eloquent');
 
 /**
  * The repository root.

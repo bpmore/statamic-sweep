@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bpmore\Sweep\Sweeps;
 
+use Bpmore\Sweep\Content\FieldTree;
 use Bpmore\Sweep\Content\Fingerprint;
 use Bpmore\Sweep\Content\Item;
 use Bpmore\Sweep\Content\Items;
@@ -58,10 +59,15 @@ final class Applier
 
     public const CONFLICT = 'conflict';
 
+    /** Blueprints read once per process, for the fingerprint check. */
+    private FieldTree $tree;
+
     public function __construct(
         private readonly SweepStore $store,
         private readonly Items $items,
-    ) {}
+    ) {
+        $this->tree = new FieldTree;
+    }
 
     public static function message(Sweep $sweep): string
     {
@@ -273,7 +279,7 @@ final class Applier
 
         $data = $item->data();
 
-        if (Fingerprint::of($data) !== $record['fingerprint']) {
+        if (Fingerprint::ofFields($data, $item->fields($this->tree)) !== $record['fingerprint']) {
             return [...$record, 'outcome' => self::CHANGED];
         }
 

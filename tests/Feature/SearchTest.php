@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Bpmore\Sweep\Content\FieldTree;
 use Bpmore\Sweep\Content\Fingerprint;
 use Bpmore\Sweep\Content\Item;
 use Bpmore\Sweep\Content\Scope;
@@ -81,7 +82,7 @@ it('hands over the item\'s fingerprint as it was searched', function () {
     [$found] = search('Acme', null);
     [$item, , $fingerprint] = $found['entry::b1'];
 
-    expect($fingerprint)->toBe(Fingerprint::of($item->data()));
+    expect($fingerprint)->toBe(Fingerprint::ofFields($item->data(), $item->fields(new FieldTree)));
 });
 
 it('searches a fieldtype named in config, and not otherwise', function () {
