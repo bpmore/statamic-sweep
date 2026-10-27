@@ -27,7 +27,7 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 
 ## Phase 3: Statamic content (in `src/Content`)
 
-- [ ] Blueprint to field tree, with imported fieldsets and nested sets resolved
+- [x] Blueprint to field tree, with imported fieldsets and nested sets resolved
 - [ ] Entries: sites, collections, status (published, draft, scheduled), field handles
 - [ ] Taxonomy terms, per site
 - [ ] Globals, per site
