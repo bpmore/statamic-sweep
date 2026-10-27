@@ -105,7 +105,7 @@ function submit() {
                             <Button size="sm" variant="ghost" :text="__('sweep::messages.select_all')" @click="setAll(kind, true)" />
                             <Button size="sm" variant="ghost" :text="__('sweep::messages.select_none')" @click="setAll(kind, false)" />
                         </div>
-                        <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        <div class="sweep-options">
                             <Checkbox
                                 v-for="option in options[kind]"
                                 :key="option.value"
@@ -122,7 +122,7 @@ function submit() {
                 <fieldset v-if="options.sites.length">
                     <legend class="mb-1 font-medium">{{ __('sweep::messages.field_sites') }}</legend>
                     <Text class="mb-2">{{ __('sweep::messages.field_sites_help') }}</Text>
-                    <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    <div class="sweep-options">
                         <Checkbox
                             v-for="site in options.sites"
                             :key="site.value"

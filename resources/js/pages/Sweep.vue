@@ -105,7 +105,7 @@ const badge = (status) => ({
             <Badge :color="badge(sweep.status)" :text="__(`sweep::messages.status_${sweep.status}`)" />
         </PanelHeader>
         <div class="space-y-4 p-4">
-            <dl class="grid gap-x-6 gap-y-2 sm:grid-cols-[max-content_1fr]">
+            <dl class="sweep-facts">
                 <dt class="font-medium">{{ __('sweep::messages.field_find') }}</dt>
                 <dd><code>{{ sweep.find }}</code> <span class="text-gray-600">({{ __(`sweep::messages.mode_${sweep.mode}`) }}{{ sweep.case_sensitive ? '' : ', ' + __('sweep::messages.any_case') }}{{ sweep.preserve_case ? ', ' + __('sweep::messages.case_kept') : '' }})</span></dd>
                 <dt class="font-medium">{{ __('sweep::messages.field_replace') }}</dt>
@@ -219,7 +219,7 @@ const badge = (status) => ({
                                 :model-value="item.selected && hit.selected"
                                 @update:model-value="(on) => select({ item: item.index, change: c, hit: h, selected: on })"
                             />
-                            <p class="sweep-diff font-mono text-sm break-words" :class="{ 'opacity-60': !item.selected || !hit.selected }">
+                            <p class="sweep-diff font-mono text-sm" :class="{ 'opacity-60': !item.selected || !hit.selected }">
                                 <span>{{ hit.before }}</span><del><span class="sr-only">{{ __('sweep::messages.diff_removed') }}</span>{{ hit.text }}</del><ins><span class="sr-only">{{ __('sweep::messages.diff_added') }}</span>{{ hit.replacement }}</ins><span>{{ hit.after }}</span>
                             </p>
                         </li>
@@ -246,12 +246,3 @@ const badge = (status) => ({
         </nav>
     </section>
 </template>
-
-<style>
-/* The diff never relies on colour alone: removed text is struck through,
-   added text underlined, and each carries a word for screen readers. */
-.sweep-diff del { text-decoration: line-through; background: rgb(254 226 226); color: rgb(127 29 29); }
-.sweep-diff ins { text-decoration: underline; text-underline-offset: 2px; background: rgb(220 252 231); color: rgb(20 83 45); }
-.dark .sweep-diff del { background: rgb(127 29 29 / 0.5); color: rgb(254 226 226); }
-.dark .sweep-diff ins { background: rgb(20 83 45 / 0.5); color: rgb(220 252 231); }
-</style>

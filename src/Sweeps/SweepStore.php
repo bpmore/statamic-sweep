@@ -133,8 +133,8 @@ final class SweepStore
                     'length' => $hit->length,
                     'text' => $hit->text,
                     'replacement' => $hit->replacement,
-                    'context_before' => self::contextBefore($change->before, $hit),
-                    'context_after' => self::contextAfter($change->before, $hit),
+                    'context_before' => self::contextBefore($change->surroundings ?? $change->before, $hit, $change->surroundingsOffset),
+                    'context_after' => self::contextAfter($change->surroundings ?? $change->before, $hit, $change->surroundingsOffset),
                     'selected' => true,
                 ], $change->hits),
             ], static fn (mixed $value): bool => $value !== null), $result->changes),
@@ -154,18 +154,19 @@ final class SweepStore
         return hash('sha256', $value);
     }
 
-    private static function contextBefore(string $subject, Hit $hit): string
+    private static function contextBefore(string $subject, Hit $hit, int $shift): string
     {
-        $from = max(0, $hit->offset - self::CONTEXT);
+        $at = $hit->offset + $shift;
+        $from = max(0, $at - self::CONTEXT);
 
         // mb_strcut moves a cut that lands inside a character back to its
         // start, so the context never holds half a character.
-        return mb_strcut($subject, $from, $hit->offset - $from, 'UTF-8');
+        return mb_strcut($subject, $from, $at - $from, 'UTF-8');
     }
 
-    private static function contextAfter(string $subject, Hit $hit): string
+    private static function contextAfter(string $subject, Hit $hit, int $shift): string
     {
-        return mb_strcut($subject, $hit->end(), self::CONTEXT, 'UTF-8');
+        return mb_strcut($subject, $hit->end() + $shift, self::CONTEXT, 'UTF-8');
     }
 
     /**

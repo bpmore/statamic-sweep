@@ -17,7 +17,10 @@ beforeEach(function () {
     config(['statamic.editions.pro' => true, 'sweep.path' => $this->sweepPath = storage_path('framework/testing/sweep-'.uniqid())]);
 
     Collection::make('blog')->title('Blog')->save();
-    Blueprint::make('post')->setNamespace('collections.blog')->setContents(['fields' => [['handle' => 'title', 'field' => ['type' => 'text', 'display' => 'Title']]]])->save();
+    Blueprint::make('post')->setNamespace('collections.blog')->setContents(['fields' => [
+        ['handle' => 'title', 'field' => ['type' => 'text', 'display' => 'Title']],
+        ['handle' => 'body', 'field' => ['type' => 'bard', 'display' => 'Body']],
+    ]])->save();
     Entry::make()->id('b1')->collection('blog')->slug('b1')->data(['title' => 'Acme Acme'])->save();
     Entry::make()->id('b2')->collection('blog')->slug('b2')->data(['title' => 'Acme'])->save();
 
@@ -109,6 +112,22 @@ it('shows a sweep\'s results, a page at a time, to the person who started it', f
             ->where('items.data.0.changes.0.label', 'Title')
             ->where('items.data.0.changes.0.hits.1', ['before' => 'Acme ', 'text' => 'Acme', 'replacement' => 'Apex', 'after' => '', 'selected' => true])
             ->where('mayApply', false));
+});
+
+it('shows a Bard match with the words around it, not just its own formatted piece', function () {
+    Entry::make()->id('b3')->collection('blog')->slug('b3')->data(['body' => [['type' => 'paragraph', 'content' => [
+        ['type' => 'text', 'text' => 'Welcome to '],
+        ['type' => 'text', 'text' => 'Acme', 'marks' => [['type' => 'bold']]],
+        ['type' => 'text', 'text' => ', friends.'],
+    ]]]])->save();
+    $this->actingAs(($this->person)('sam', [Permissions::USE]));
+    startSweep();
+    $sweep = app(SweepStore::class)->all()[0];
+
+    $this->get(cp_route('sweep.sweeps.show', $sweep->id))
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('items.data.2.reference', 'entry::b3')
+            ->where('items.data.2.changes.0.hits.0', ['before' => 'Welcome to ', 'text' => 'Acme', 'replacement' => 'Apex', 'after' => ', friends.', 'selected' => true]));
 });
 
 it('keeps a sweep from anyone but its starter and super admins', function () {

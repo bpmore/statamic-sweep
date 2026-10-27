@@ -1,0 +1,70 @@
+/*
+ * Layout the control panel's own stylesheet does not include. Statamic's CSS
+ * only holds the utility classes core uses, so anything else an addon needs
+ * it ships itself, under its own prefix.
+ */
+
+.sweep-facts {
+    display: grid;
+    row-gap: 0.25rem;
+}
+
+.sweep-facts dd {
+    margin-bottom: 0.5rem;
+}
+
+.sweep-options {
+    display: grid;
+    gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+    .sweep-facts {
+        grid-template-columns: max-content 1fr;
+        column-gap: 1.5rem;
+        row-gap: 0.5rem;
+    }
+
+    .sweep-facts dd {
+        margin-bottom: 0;
+    }
+
+    .sweep-options {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1024px) {
+    .sweep-options {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+/* The diff never relies on colour alone: removed text is struck through,
+   added text underlined, and each carries a word for screen readers. */
+.sweep-diff {
+    overflow-wrap: anywhere;
+}
+
+.sweep-diff del {
+    text-decoration: line-through;
+    background: rgb(254 226 226);
+    color: rgb(127 29 29);
+}
+
+.sweep-diff ins {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    background: rgb(220 252 231);
+    color: rgb(20 83 45);
+}
+
+.dark .sweep-diff del {
+    background: rgb(127 29 29 / 0.5);
+    color: rgb(254 226 226);
+}
+
+.dark .sweep-diff ins {
+    background: rgb(20 83 45 / 0.5);
+    color: rgb(220 252 231);
+}

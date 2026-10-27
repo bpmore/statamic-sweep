@@ -27,12 +27,19 @@ final class Change
      * @param  list<string|int>  $path
      * @param  list<array{kind: string, name?: string, n?: int}>  $label
      * @param  list<Hit>  $hits
+     * @param  string|null  $surroundings  the text a person reads around
+     *                                     `before`, when that is more than
+     *                                     `before` itself: a Bard text node's
+     *                                     whole paragraph, for the diff
+     * @param  int  $surroundingsOffset  where `before` starts in it
      */
     public function __construct(
         public readonly array $path,
         public readonly array $label,
         public readonly string $before,
         public readonly array $hits,
+        public readonly ?string $surroundings = null,
+        public readonly int $surroundingsOffset = 0,
     ) {}
 
     /** The string with every hit replaced. */

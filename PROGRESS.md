@@ -62,10 +62,10 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 
 ## Phase 7: Control panel (WCAG 2.2 AA is a release blocker)
 
-- [ ] Search screen: find, replace, mode, case, scope filters, a live status message
-- [ ] Results: grouped by item, inline diff per match, deselect a match or an item, paginated, split matches with a link to the entry
-- [ ] Apply and undo with a progress bar and an announced result
-- [ ] History list: who, when, find, replace, scope, counts, status
+- [x] Search screen: find, replace, mode, case, scope filters, a live status message
+- [x] Results: grouped by item, inline diff per match, deselect a match or an item, paginated, split matches with a link to the entry
+- [x] Apply and undo with a progress bar and an announced result
+- [x] History list: who, when, find, replace, scope, counts, status
 - [ ] Presets: stored as YAML, the three built-ins (domain change, WordPress shortcodes, rebrand), create, edit, share as YAML, gated by `manage sweep presets`
 
 ## Phase 8: Ship
@@ -148,3 +148,11 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 - One Git commit for an undo too, with `Undo sweep: <find> → <replace>`.
 - `sweep:prune` runs daily: past `undo_days` (from apply, or from creation for a preview never applied) it deletes a sweep's items and keeps the sweep record, so the history still shows who, when, what and counts. Undo is then unavailable. This differs from the earlier config comment, which said the history would forget it.
 - Not tested here, noted for the CP: a renamed term's old id lingered in the test Stache after `slug()` + `save()`; the CP renames terms the same way, so this is Statamic's behaviour under `PreventsSavingStacheItemsToDisk`, not Sweep's. Worth a look on `statamic-dev` with real files.
+
+### 2026-10-26: Control panel (search, results, apply, undo, history)
+- Checked in a real browser on a throwaway Statamic 6.38 site (not `statamic-dev`: its lock file is on 6.31 while Lifecycle needs 6.34, so adding Sweep there needs `composer update -W` on the whole dev site, which is Brent's call). Search, preview with inline diffs, apply (61 entries, bold marks kept on disk), undo (61 restored, file identical), history: all worked. No console errors.
+- Statamic's CP stylesheet only holds the utility classes core uses. Five of Sweep's were missing (the summary grid, the option columns, `break-words`); they are now in `resources/css/cp.css` under a `sweep-` prefix.
+- A sweep's items (and apply, undo) open only for its starter and super admins (`Permissions::mayOpen`), because the results show content its starter may edit. Everyone with `use sweep` sees the history and counts.
+- Found in the browser: a bold word in Bard showed with no words around it, since context came from the one text node. Context now comes from the whole run of text, offset to the node.
+- After changing the built assets, a site needs `php artisan vendor:publish --tag=sweep --force`; Statamic does this on `composer update` of the addon.
+- **Not done yet:** the axe scan. Loading axe-core from a CDN into the page was refused by this session's permissions. Phase 8 task; run it with `@axe-core/playwright` installed locally, or Brent's usual tool.

@@ -1,3 +1,4 @@
+import '../css/cp.css';
 import { inertia } from '@statamic/cms/api';
 
 import History from './pages/History.vue';

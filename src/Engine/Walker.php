@@ -304,7 +304,7 @@ final class Walker
         }
 
         foreach ($byNode as $index => $nodeHits) {
-            $this->changes[] = new Change([...$path, $index, 'text'], $label, $run[$index], $nodeHits);
+            $this->changes[] = new Change([...$path, $index, 'text'], $label, $run[$index], $nodeHits, $joined, $starts[$index]);
         }
     }
 
