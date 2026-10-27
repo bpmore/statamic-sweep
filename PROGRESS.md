@@ -203,3 +203,4 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 
 ### 2026-10-26: Merged
 - PR #1 merged into `main` without CI: GitHub Actions is paused on the account for billing until Nov 1. Re-run CI on `main` once billing is fixed, before tagging 1.0.0.
+- 2026-10-27, before release: ran the suite locally under Herd's PHP 8.2.35 (Eloquent driver removed and its group left out, as CI does: 200 passed, speed test included) and PHP 8.3 (202 passed). Repo made public for the Marketplace, then 1.0.0 tagged as `v1.0.0`, matching Lifecycle's tag style.

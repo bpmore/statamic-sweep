@@ -4,7 +4,7 @@ What changed in each release, and what you have to do about it.
 
 Versions are `MAJOR.MINOR.PATCH`.
 
-## 1.0.0 - unreleased
+## 1.0.0 - 2026-10-27
 
 The first release.
 
