@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Bpmore\Sweep\Content;
 
 use Statamic\Contracts\Entries\Entry as EntryContract;
+use Statamic\Facades\Asset;
+use Statamic\Facades\AssetContainer;
 use Statamic\Facades\Entry;
 use Statamic\Facades\GlobalSet;
 use Statamic\Facades\Nav;
@@ -27,6 +29,7 @@ final class Items
         yield from $this->terms($scope);
         yield from $this->globals($scope);
         yield from $this->navs($scope);
+        yield from $this->assets($scope);
     }
 
     public function find(string $reference): ?Item
@@ -38,6 +41,7 @@ final class Items
             'term' => $this->findTerm($rest),
             'global' => $this->findGlobal($rest),
             'nav' => $this->findNav($rest),
+            'asset' => ($asset = Asset::find($rest)) ? new AssetItem($asset) : null,
             default => null,
         };
     }
@@ -159,6 +163,33 @@ final class Items
                 if ($scope->coversSite((string) $site)) {
                     yield new NavItem($tree);
                 }
+            }
+        }
+    }
+
+    /**
+     * Asset metadata is shared by every site in Statamic 6, so a sweep
+     * scoped to some sites leaves assets out. Changing alt text "for French"
+     * would change it for every site.
+     *
+     * @return iterable<Item>
+     */
+    private function assets(Scope $scope): iterable
+    {
+        if ($scope->containers === [] || $scope->sites !== []) {
+            return;
+        }
+
+        $containers = AssetContainer::all()
+            ->filter(fn ($container) => $scope->containers === null || in_array($container->handle(), $scope->containers, true))
+            ->map(fn ($container) => $container->handle())
+            ->sort()
+            ->values()
+            ->all();
+
+        foreach ($containers as $container) {
+            foreach (Asset::query()->where('container', $container)->orderBy('path')->lazy(self::CHUNK) as $asset) {
+                yield new AssetItem($asset);
             }
         }
     }

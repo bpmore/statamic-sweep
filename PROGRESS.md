@@ -8,6 +8,7 @@
 Each one changes a task below. Until it is answered, its task says **(waits on Dn)** and the default is built.
 
 - **D1. Free tier.** Paid only, or free with a 25-item apply limit? Default built: paid only, one edition. The apply limit is one check in one place, so adding it later is small.
+- **D3. Per-site asset alt text (acceptance 9).** Statamic 6.38 has no per-site asset metadata: `Statamic\Assets\Asset` and `AssetContainer` never mention a site or locale, and an asset's alt text is one value shown on every site. So "replaced per site when scoped to one site" cannot happen with core Statamic. Default built: a sweep scoped to some sites leaves assets out entirely, and the search screen will say why. Other options: (b) support a per-site field naming convention, such as `alt_fr`, mapped in config; (c) include assets in site-scoped sweeps anyway, with a warning that the change shows on every site. Recommended: the default, and rewrite acceptance 9 to "A sweep scoped to one site never changes asset metadata, which every site shares."
 - **D2. Redirects.** Offer to create redirects through a detected redirect addon when slugs change, or stay out of URLs? Default built: stay out of URLs. The slug option warns and links to the docs page on redirects.
 
 ## Phase 1: Foundations
@@ -32,7 +33,7 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 - [x] Taxonomy terms, per site
 - [x] Globals, per site
 - [x] Navigation: branch titles and URLs, and nav branch fields
-- [ ] Asset metadata: alt, title, custom fields. **Research first:** how Statamic 6 stores asset meta per site, for acceptance 9. Write the finding here before building.
+- [x] Asset metadata: alt, title, custom fields. Researched: Statamic 6 has no per-site asset metadata. Built site-neutral; acceptance 9 **(waits on D3)**.
 - [ ] Permission filter: results only include items the user can edit. Acceptance 6.
 - [ ] Slugs, opt-in, with a warning about URLs and redirects
 
