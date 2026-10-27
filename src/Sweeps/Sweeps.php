@@ -10,8 +10,10 @@ use Bpmore\Sweep\Content\Search;
 use Bpmore\Sweep\Content\Tally;
 use Bpmore\Sweep\Engine\Query;
 use Bpmore\Sweep\Engine\Result;
+use Bpmore\Sweep\Jobs\ApplySweep;
 use Bpmore\Sweep\Jobs\SearchSweep;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Statamic\Contracts\Auth\User;
 use Statamic\Facades\User as Users;
 use Throwable;
@@ -29,6 +31,7 @@ final class Sweeps
     public function __construct(
         private readonly SweepStore $store,
         private readonly Search $search,
+        private readonly Applier $applier,
     ) {}
 
     /**
@@ -115,6 +118,66 @@ final class Sweeps
         $sweep->status = Status::Previewed;
         $sweep->progress = ['phase' => 'search', 'done' => $tally->searched + $tally->skippedForPermission];
         $this->store->save($sweep);
+    }
+
+    /**
+     * Queues a previewed sweep to be applied, as this person. Returns false,
+     * changing nothing, when the sweep is not a preview waiting to be
+     * applied: already applied, still searching, or being applied by
+     * somebody else this moment.
+     */
+    public function apply(Sweep $sweep, ?User $user, bool $now = false): bool
+    {
+        // Two people pressing Apply at once: the lock lets one through, and
+        // the other then finds the sweep already applying.
+        $fresh = Cache::lock('sweep-'.$sweep->id, 10)->get(function () use ($sweep): ?Sweep {
+            $fresh = $this->store->find($sweep->id);
+
+            if ($fresh === null || $fresh->status !== Status::Previewed) {
+                return null;
+            }
+
+            $fresh->status = Status::Applying;
+            $fresh->progress = ['phase' => 'apply', 'done' => 0, 'total' => $fresh->items];
+            $this->store->save($fresh);
+
+            return $fresh;
+        });
+
+        if (! $fresh instanceof Sweep) {
+            return false;
+        }
+
+        $job = [$fresh->id, $user ? (string) $user->id() : null];
+        $now ? ApplySweep::dispatchSync(...$job) : ApplySweep::dispatch(...$job);
+
+        return true;
+    }
+
+    /** The queued half of apply(). */
+    public function runApply(string $id, ?string $userId): void
+    {
+        $sweep = $this->store->find($id);
+
+        if ($sweep === null || $sweep->status !== Status::Applying) {
+            return;
+        }
+
+        $user = $userId !== null ? Users::find($userId) : null;
+
+        if ($userId !== null && $user === null) {
+            $this->fail($sweep, __('sweep::messages.error_applier_gone'));
+
+            return;
+        }
+
+        try {
+            $this->applier->apply($id, $user);
+        } catch (Throwable $e) {
+            $this->fail($this->store->find($id) ?? $sweep, $e->getMessage());
+
+            throw $e;
+        }
     }
 
     /**

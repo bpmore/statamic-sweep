@@ -47,12 +47,12 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 
 ## Phase 5: Apply
 
-- [ ] Apply selected changes as a queued batch with progress
-- [ ] Re-read each item before writing; skip and flag "changed since preview" when the before value differs. Acceptance 4.
-- [ ] Save through Statamic (validation, events, search index); a revision with `Sweep: <find> → <replace>` where revisions are on
-- [ ] Git automation: one commit for the batch. Approach found in Statamic 6.38: `Statamic\Git\Subscriber::withoutListeners()` around the saves, then one `Git::as($user)->dispatchCommit($message)`. Every other listener still runs. Acceptance 7.
-- [ ] Static cache: the changed items' URLs are invalidated
-- [ ] `sweep:run --apply`
+- [x] Apply selected changes as a queued batch with progress
+- [x] Re-read each item before writing; skip and flag "changed since preview" when the before value differs. Acceptance 4.
+- [x] Save through Statamic (validation, events, search index); a revision with `Sweep: <find> → <replace>` where revisions are on
+- [x] Git automation: one commit for the batch. Approach found in Statamic 6.38: `Statamic\Git\Subscriber::withoutListeners()` around the saves, then one `Git::as($user)->dispatchCommit($message)`. Every other listener still runs. Acceptance 7.
+- [x] Static cache: the changed items' URLs are invalidated
+- [x] `sweep:run --apply`
 
 ## Phase 6: Undo and history
 
@@ -130,3 +130,13 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 - A queued search runs as the person who started it (permission filter). If that account is deleted before the job runs, the sweep fails instead of searching as nobody, which would show them everything.
 - Progress is written every 50 items and each chunk of 100 found items as it fills, so the CP can show early results. No total is known up front: counting first would read the site twice.
 - `sweep:run` without `--apply` is a dry run, whether or not `--dry-run` is passed. `--word` was added beside `--regex`, plus `--ignore-case`, `--preserve-case`, `--slugs`, `--code`; `--scope` repeats. `--apply` arrives with Phase 5.
+
+### 2026-10-26: Apply
+- `Sweeps\Applier` re-reads each item, compares its whole-data fingerprint with the preview's (acceptance 4: an edit to any field skips the item), then checks each string's hash before replacing only the selected hits.
+- Git (acceptance 7): `Statamic\Git\Subscriber::disable()` / `enable()` in a `try`/`finally` around the batch, then one `Git::as($user)->dispatchCommit('Sweep: <find> → <replace>')`. Not `withoutListeners()`: it has no `finally`, so one failed save would leave a queue worker never committing again. Mutation-checked both halves. Every other listener still runs.
+- Static cache: Statamic's own queued `Invalidate` listener is left running, so each changed item is refreshed by the site's own invalidation rules. Tested: exactly the changed entries are refreshed. This is one invalidation per changed item, not one for the batch as the spec's Git paragraph suggests; collecting URLs ourselves would lose the site's rules. Raise with Brent only if a site reports cache churn.
+- Found: an entry with a working copy (unpublished changes, revisions on) would have the sweep wiped when those changes are published. Such entries are skipped as `working_copy` and listed for a person.
+- Saves go through `updateLastModified($user)`, so `updated_by` names the person who applied the sweep, and a revision with the sweep's message is made where the collection keeps revisions.
+- Apply is guarded by a cache lock so two people pressing Apply at once apply it once. A second apply of the same sweep is refused.
+- `sweep:run --apply` searches and applies in one run; `sweep:run --sweep=<id> --apply` applies an earlier preview.
+- Testing note: `vendor/bin/pest | grep` hid a fatal error once (two test files declared the same helper). Check the exit code, not just the summary line.

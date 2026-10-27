@@ -76,6 +76,11 @@ final class NavItem implements Item
         return (bool) $user->can('edit', $this->tree);
     }
 
+    public function cannotWrite(): ?string
+    {
+        return null;
+    }
+
     public function write(array $data, string $message, ?User $user): void
     {
         if (($data['tree'] ?? null) === $this->tree->tree()) {

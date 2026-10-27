@@ -69,6 +69,11 @@ it('keeps a preview of 50,000 matches in 10 KB fields under 50 MB', function () 
             return true;
         }
 
+        public function cannotWrite(): ?string
+        {
+            return null;
+        }
+
         public function write(array $data, string $message, ?User $user): void {}
     };
 

@@ -55,6 +55,13 @@ interface Item
     public function mayEdit(User $user): bool;
 
     /**
+     * Why this item cannot be written now, as a short code, or null when it
+     * can. `working_copy`: an entry with unpublished changes, which would
+     * overwrite the sweep the moment they are published.
+     */
+    public function cannotWrite(): ?string;
+
+    /**
      * Saves new values through Statamic, so validation listeners, events,
      * search indexing and static cache invalidation all run. `$data` is
      * data() with some values changed; only the changed ones are written.

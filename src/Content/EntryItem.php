@@ -78,6 +78,16 @@ final class EntryItem implements Item
         return (bool) $user->can('edit', $this->entry);
     }
 
+    public function cannotWrite(): ?string
+    {
+        return $this->entry->revisionsEnabled() && $this->entry->hasWorkingCopy() ? 'working_copy' : null;
+    }
+
+    /**
+     * Saved as the person applying the sweep, and, where the collection keeps
+     * revisions, recorded as a revision with the sweep's message, the way the
+     * control panel records a save.
+     */
     public function write(array $data, string $message, ?User $user): void
     {
         $current = $this->data();
@@ -92,6 +102,10 @@ final class EntryItem implements Item
                 : $this->entry->set($handle, $value);
         }
 
-        $this->entry->save();
+        $this->entry->updateLastModified($user)->save();
+
+        if ($this->entry->revisionsEnabled()) {
+            $this->entry->makeRevision()->user($user)->message($message)->save();
+        }
     }
 }

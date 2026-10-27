@@ -11,6 +11,7 @@ use Bpmore\Sweep\Engine\Query;
 use Bpmore\Sweep\Sweeps\Status;
 use Bpmore\Sweep\Sweeps\Sweep;
 use Bpmore\Sweep\Sweeps\Sweeps;
+use Bpmore\Sweep\Sweeps\SweepStore;
 use Illuminate\Console\Command;
 
 /**
@@ -30,12 +31,24 @@ class RunSweep extends Command
         {--scope=* : Where to look: collection:blog, taxonomy:tags, global:footer, nav:main, assets:images, site:en, status:draft, field:title. Repeat for more}
         {--slugs : Also search slug fields. Changing a slug changes a URL}
         {--code : Also search code fields}
-        {--dry-run : Write the preview and print the counts, changing nothing (the default)}';
+        {--dry-run : Write the preview and print the counts, changing nothing (the default)}
+        {--apply : Apply the preview: the one this run makes, or with --sweep an earlier one}
+        {--sweep= : The id of an earlier preview, to apply with --apply}';
 
     protected $description = 'Find and replace across the site, writing a preview first';
 
-    public function handle(Sweeps $sweeps): int
+    public function handle(Sweeps $sweeps, SweepStore $store): int
     {
+        if ($this->option('apply') && $this->option('dry-run')) {
+            $this->components->error(__('sweep::messages.cli_apply_and_dry_run'));
+
+            return self::INVALID;
+        }
+
+        if ($this->option('sweep') !== null) {
+            return $this->applyEarlier($sweeps, $store, (string) $this->option('sweep'));
+        }
+
         try {
             $query = new Query(
                 find: (string) $this->option('find'),
@@ -66,7 +79,58 @@ class RunSweep extends Command
         }
 
         $this->counts($sweep);
-        $this->components->info(__('sweep::messages.cli_previewed', ['id' => $sweep->id]));
+
+        if (! $this->option('apply')) {
+            $this->components->info(__('sweep::messages.cli_previewed', ['id' => $sweep->id]));
+
+            return self::SUCCESS;
+        }
+
+        return $this->apply($sweeps, $store, $sweep);
+    }
+
+    private function applyEarlier(Sweeps $sweeps, SweepStore $store, string $id): int
+    {
+        $sweep = $store->find($id);
+
+        if ($sweep === null) {
+            $this->components->error(__('sweep::messages.cli_no_such_sweep', ['id' => $id]));
+
+            return self::INVALID;
+        }
+
+        if (! $this->option('apply')) {
+            $this->counts($sweep);
+
+            return self::SUCCESS;
+        }
+
+        return $this->apply($sweeps, $store, $sweep);
+    }
+
+    private function apply(Sweeps $sweeps, SweepStore $store, Sweep $sweep): int
+    {
+        if (! $sweeps->apply($sweep, null, now: true)) {
+            $this->components->error(__('sweep::messages.cli_not_applicable', ['status' => $sweep->status->value]));
+
+            return self::FAILURE;
+        }
+
+        $sweep = $store->find($sweep->id) ?? $sweep;
+
+        if ($sweep->status === Status::Failed) {
+            $this->components->error((string) $sweep->error);
+
+            return self::FAILURE;
+        }
+
+        foreach ($sweep->applyTally as $outcome => $count) {
+            if ($count > 0) {
+                $this->components->twoColumnDetail(__('sweep::messages.outcome_'.$outcome), (string) $count);
+            }
+        }
+
+        $this->components->info(__('sweep::messages.cli_applied', ['id' => $sweep->id]));
 
         return self::SUCCESS;
     }

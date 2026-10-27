@@ -104,3 +104,28 @@ it('refuses a bad pattern or scope from Artisan before searching anything', func
 
     expect(app(SweepStore::class)->all())->toBe([]);
 });
+
+it('applies from Artisan in the same run with --apply', function () {
+    $this->artisan('sweep:run', ['--find' => 'Acme', '--replace' => 'Apex', '--scope' => ['collection:blog'], '--apply' => true])
+        ->expectsOutputToContain('Changed')
+        ->expectsOutputToContain('applied')
+        ->assertSuccessful();
+
+    expect(Entry::find('e001')->get('title'))->toBe('Apex 1')
+        ->and(app(SweepStore::class)->all()[0]->status)->toBe(Status::Applied);
+});
+
+it('applies an earlier preview from Artisan with --apply --sweep, once', function () {
+    $this->artisan('sweep:run', ['--find' => 'Acme', '--replace' => 'Apex'])->assertSuccessful();
+    $id = app(SweepStore::class)->all()[0]->id;
+
+    $this->artisan('sweep:run', ['--sweep' => $id])->expectsOutputToContain('Matches')->assertSuccessful();
+    expect(Entry::find('e001')->get('title'))->toBe('Acme 1');
+
+    $this->artisan('sweep:run', ['--sweep' => $id, '--apply' => true])->assertSuccessful();
+    expect(Entry::find('e001')->get('title'))->toBe('Apex 1');
+
+    $this->artisan('sweep:run', ['--sweep' => $id, '--apply' => true])->expectsOutputToContain('cannot be applied')->assertFailed();
+    $this->artisan('sweep:run', ['--sweep' => '01j00000000000000000000000', '--apply' => true])->assertExitCode(2);
+    $this->artisan('sweep:run', ['--find' => 'a', '--apply' => true, '--dry-run' => true])->assertExitCode(2);
+});

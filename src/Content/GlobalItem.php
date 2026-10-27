@@ -61,6 +61,11 @@ final class GlobalItem implements Item
         return (bool) $user->can('edit', $this->variables);
     }
 
+    public function cannotWrite(): ?string
+    {
+        return null;
+    }
+
     public function write(array $data, string $message, ?User $user): void
     {
         $current = $this->data();

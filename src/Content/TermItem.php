@@ -79,6 +79,11 @@ final class TermItem implements Item
         return (bool) $user->can('edit', $this->term);
     }
 
+    public function cannotWrite(): ?string
+    {
+        return null;
+    }
+
     public function write(array $data, string $message, ?User $user): void
     {
         $current = $this->data();
