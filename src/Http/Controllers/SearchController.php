@@ -9,6 +9,7 @@ use Bpmore\Sweep\Content\Scope;
 use Bpmore\Sweep\Engine\InvalidQuery;
 use Bpmore\Sweep\Engine\Mode;
 use Bpmore\Sweep\Engine\Query;
+use Bpmore\Sweep\Presets\Presets;
 use Bpmore\Sweep\Sweeps\Sweeps;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -29,7 +30,7 @@ use Statamic\Http\Controllers\CP\CpController;
  */
 class SearchController extends CpController
 {
-    public function index(Request $request): Response
+    public function index(Request $request, Presets $presets): Response
     {
         abort_unless(Permissions::mayUse(User::current()), 403);
 
@@ -51,6 +52,10 @@ class SearchController extends CpController
             ],
             // A search carried over from "Search again" in the history, or a preset.
             'initial' => $request->session()->get('sweep.initial'),
+            'presets' => $presets->all(),
+            'mayManagePresets' => Permissions::mayManagePresets(User::current()),
+            'presetsUrl' => cp_route('sweep.presets'),
+            'savePresetUrl' => cp_route('sweep.presets.store'),
             'startUrl' => cp_route('sweep.sweeps.store'),
             'historyUrl' => cp_route('sweep.history'),
         ]);

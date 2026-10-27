@@ -1,0 +1,7 @@
+title: Rebrand
+description: 'Changes one name to another as a whole word, keeping its case: Acme to Apex, ACME to APEX, acme to apex. Edit both names before you preview.'
+find: Acme
+replace: Apex
+mode: word
+case_sensitive: false
+preserve_case: true

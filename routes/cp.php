@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Bpmore\Sweep\Http\Controllers\HistoryController;
+use Bpmore\Sweep\Http\Controllers\PresetController;
 use Bpmore\Sweep\Http\Controllers\SearchController;
 use Bpmore\Sweep\Http\Controllers\SweepController;
 use Illuminate\Support\Facades\Route;
@@ -17,5 +18,9 @@ Route::prefix('sweep')->name('sweep.')->group(function (): void {
     Route::patch('sweeps/{sweep}/selection', [SweepController::class, 'select'])->name('sweeps.select');
     Route::post('sweeps/{sweep}/apply', [SweepController::class, 'apply'])->name('sweeps.apply');
     Route::post('sweeps/{sweep}/undo', [SweepController::class, 'undo'])->name('sweeps.undo');
+    Route::get('presets', [PresetController::class, 'index'])->name('presets');
+    Route::post('presets', [PresetController::class, 'store'])->name('presets.store');
+    Route::delete('presets/{preset}', [PresetController::class, 'destroy'])->name('presets.destroy');
+    Route::get('presets/{preset}/export', [PresetController::class, 'export'])->name('presets.export');
     Route::get('sweeps/{sweep}/again', [SweepController::class, 'again'])->name('sweeps.again');
 });

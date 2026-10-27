@@ -68,3 +68,8 @@
     background: rgb(20 83 45 / 0.5);
     color: rgb(220 252 231);
 }
+
+.sweep-yaml {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}

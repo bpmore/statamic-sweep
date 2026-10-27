@@ -20,6 +20,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Where presets are kept
+    |--------------------------------------------------------------------------
+    |
+    | Saved searches people make are YAML files here, one per preset, so they
+    | can be committed and shared like any other site file. The three presets
+    | that ship with Sweep (domain change, WordPress shortcode cleanup,
+    | rebrand) are read from the addon and need no file here.
+    |
+    */
+
+    'presets_path' => resource_path('sweep/presets'),
+
+    /*
+    |--------------------------------------------------------------------------
     | How long undo stays available
     |--------------------------------------------------------------------------
     |

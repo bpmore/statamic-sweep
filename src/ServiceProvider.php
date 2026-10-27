@@ -41,6 +41,10 @@ class ServiceProvider extends AddonServiceProvider
     {
         parent::register();
 
+        $this->app->bind(Presets\Presets::class, fn ($app): Presets\Presets => new Presets\Presets(
+            (string) $app['config']->get('sweep.presets_path', resource_path('sweep/presets')),
+        ));
+
         $this->app->bind(Sweeps\SweepStore::class, fn ($app): Sweeps\SweepStore => new Sweeps\SweepStore(
             (string) $app['config']->get('sweep.path', storage_path('sweep')),
         ));

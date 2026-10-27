@@ -66,7 +66,7 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 - [x] Results: grouped by item, inline diff per match, deselect a match or an item, paginated, split matches with a link to the entry
 - [x] Apply and undo with a progress bar and an announced result
 - [x] History list: who, when, find, replace, scope, counts, status
-- [ ] Presets: stored as YAML, the three built-ins (domain change, WordPress shortcodes, rebrand), create, edit, share as YAML, gated by `manage sweep presets`
+- [x] Presets: stored as YAML, the three built-ins (domain change, WordPress shortcodes, rebrand), create, edit, share as YAML, gated by `manage sweep presets`
 
 ## Phase 8: Ship
 
@@ -156,3 +156,10 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 - Found in the browser: a bold word in Bard showed with no words around it, since context came from the one text node. Context now comes from the whole run of text, offset to the node.
 - After changing the built assets, a site needs `php artisan vendor:publish --tag=sweep --force`; Statamic does this on `composer update` of the addon.
 - **Not done yet:** the axe scan. Loading axe-core from a CDN into the page was refused by this session's permissions. Phase 8 task; run it with `@axe-core/playwright` installed locally, or Brent's usual tool.
+
+### 2026-10-26: Presets
+- Built-ins ship in `resources/presets/*.yaml` and cannot be edited or deleted; a site's own are YAML in `resources/sweep/presets` (config `sweep.presets_path`), so they go into the site's Git. A site preset with a built-in's handle takes its place.
+- A preset is a search only (find, replace, mode, case options, title, description). Where to look is chosen each time.
+- Every built-in is tested on sample text. The domain preset ends in `\b`, so `old.example.community` is not touched; the shortcode preset removes `[caption ...]`, `[/caption]`, `[embed]`, `[gallery ...]` and keeps what is between.
+- Share: download as YAML from the Presets screen; import by pasting YAML. Saving, importing and deleting need `manage sweep presets`; viewing and downloading need `use sweep`.
+- Checked in the browser: choosing a preset fills in find, replace and mode.
