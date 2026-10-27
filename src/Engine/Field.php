@@ -27,6 +27,12 @@ final class Field
         public readonly array $sets = [],
     ) {}
 
+    /** The same field under another handle. */
+    public function renamed(string $handle): self
+    {
+        return new self($handle, $this->type, $this->display, $this->fields, $this->sets);
+    }
+
     /**
      * @param  array{handle: string, type: string, display?: string, fields?: list<array<string, mixed>>, sets?: array<string, array{display?: string, fields?: list<array<string, mixed>>}>}  $definition
      */

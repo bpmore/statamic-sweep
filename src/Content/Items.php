@@ -7,6 +7,7 @@ namespace Bpmore\Sweep\Content;
 use Statamic\Contracts\Entries\Entry as EntryContract;
 use Statamic\Facades\Entry;
 use Statamic\Facades\GlobalSet;
+use Statamic\Facades\Nav;
 use Statamic\Facades\Term;
 
 /**
@@ -25,6 +26,7 @@ final class Items
         yield from $this->entries($scope);
         yield from $this->terms($scope);
         yield from $this->globals($scope);
+        yield from $this->navs($scope);
     }
 
     public function find(string $reference): ?Item
@@ -35,6 +37,7 @@ final class Items
             'entry' => ($entry = Entry::find($rest)) ? new EntryItem($entry) : null,
             'term' => $this->findTerm($rest),
             'global' => $this->findGlobal($rest),
+            'nav' => $this->findNav($rest),
             default => null,
         };
     }
@@ -136,6 +139,37 @@ final class Items
                 yield new GlobalItem($variables);
             }
         }
+    }
+
+    /**
+     * @return iterable<Item>
+     */
+    private function navs(Scope $scope): iterable
+    {
+        if ($scope->navs === []) {
+            return;
+        }
+
+        foreach (Nav::all()->sortBy(fn ($nav) => $nav->handle()) as $nav) {
+            if ($scope->navs !== null && ! in_array($nav->handle(), $scope->navs, true)) {
+                continue;
+            }
+
+            foreach ($nav->trees()->sortKeys() as $site => $tree) {
+                if ($scope->coversSite((string) $site)) {
+                    yield new NavItem($tree);
+                }
+            }
+        }
+    }
+
+    /** `<handle>::<site>` */
+    private function findNav(string $rest): ?NavItem
+    {
+        [$handle, $site] = array_pad(explode('::', $rest, 2), 2, '');
+        $tree = Nav::findByHandle($handle)?->in($site);
+
+        return $tree ? new NavItem($tree) : null;
     }
 
     /** `<taxonomy>::<slug>::<site>` */

@@ -31,7 +31,7 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 - [x] Entries: sites, collections, status (published, draft, scheduled), field handles
 - [x] Taxonomy terms, per site
 - [x] Globals, per site
-- [ ] Navigation: branch titles and URLs, and nav branch fields
+- [x] Navigation: branch titles and URLs, and nav branch fields
 - [ ] Asset metadata: alt, title, custom fields. **Research first:** how Statamic 6 stores asset meta per site, for acceptance 9. Write the finding here before building.
 - [ ] Permission filter: results only include items the user can edit. Acceptance 6.
 - [ ] Slugs, opt-in, with a warning about URLs and redirects
