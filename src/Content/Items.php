@@ -6,6 +6,8 @@ namespace Bpmore\Sweep\Content;
 
 use Statamic\Contracts\Entries\Entry as EntryContract;
 use Statamic\Facades\Entry;
+use Statamic\Facades\GlobalSet;
+use Statamic\Facades\Term;
 
 /**
  * Every item in a scope, read a chunk at a time so a large site is never
@@ -21,6 +23,8 @@ final class Items
     public function in(Scope $scope): iterable
     {
         yield from $this->entries($scope);
+        yield from $this->terms($scope);
+        yield from $this->globals($scope);
     }
 
     public function find(string $reference): ?Item
@@ -29,6 +33,8 @@ final class Items
 
         return match ($kind) {
             'entry' => ($entry = Entry::find($rest)) ? new EntryItem($entry) : null,
+            'term' => $this->findTerm($rest),
+            'global' => $this->findGlobal($rest),
             default => null,
         };
     }
@@ -41,7 +47,15 @@ final class Items
     {
         $item = $this->find($reference);
 
-        return $item instanceof EntryItem ? new EntryItem($item->entry(), $scope->slugs) : $item;
+        if (! $scope->slugs) {
+            return $item;
+        }
+
+        return match (true) {
+            $item instanceof EntryItem => new EntryItem($item->entry(), true),
+            $item instanceof TermItem => $this->findTerm(substr($reference, strlen('term::')), true),
+            default => $item,
+        };
     }
 
     /**
@@ -74,5 +88,72 @@ final class Items
 
             yield new EntryItem($entry, $scope->slugs);
         }
+    }
+
+    /**
+     * @return iterable<Item>
+     */
+    private function terms(Scope $scope): iterable
+    {
+        if ($scope->taxonomies === []) {
+            return;
+        }
+
+        $query = Term::query();
+
+        if ($scope->taxonomies !== null) {
+            $query->whereIn('taxonomy', $scope->taxonomies);
+        }
+
+        if ($scope->sites !== []) {
+            $query->whereIn('site', $scope->sites);
+        }
+
+        foreach ($query->orderBy('id')->lazy(self::CHUNK) as $term) {
+            yield new TermItem($term, $scope->slugs);
+        }
+    }
+
+    /**
+     * @return iterable<Item>
+     */
+    private function globals(Scope $scope): iterable
+    {
+        if ($scope->globals === []) {
+            return;
+        }
+
+        foreach (GlobalSet::all()->sortBy(fn ($set) => $set->handle()) as $set) {
+            if ($scope->globals !== null && ! in_array($set->handle(), $scope->globals, true)) {
+                continue;
+            }
+
+            foreach ($set->sites() as $site) {
+                if (! $scope->coversSite($site) || ! ($variables = $set->in($site))) {
+                    continue;
+                }
+
+                yield new GlobalItem($variables);
+            }
+        }
+    }
+
+    /** `<taxonomy>::<slug>::<site>` */
+    private function findTerm(string $rest, bool $slugs = false): ?TermItem
+    {
+        $parts = explode('::', $rest);
+        $site = array_pop($parts);
+        $term = Term::find(implode('::', $parts))?->in($site);
+
+        return $term ? new TermItem($term, $slugs) : null;
+    }
+
+    /** `<handle>::<site>` */
+    private function findGlobal(string $rest): ?GlobalItem
+    {
+        [$handle, $site] = array_pad(explode('::', $rest, 2), 2, '');
+        $variables = GlobalSet::findByHandle($handle)?->in($site);
+
+        return $variables ? new GlobalItem($variables) : null;
     }
 }
