@@ -71,7 +71,7 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 ## Phase 8: Ship
 
 - [x] Fixtures: multisite, Eloquent driver, Bard with nested sets, Replicator inside Grid inside Bard
-- [ ] Performance: 10,000 entries searched in under 60 seconds
+- [x] Performance: 10,000 entries searched in under 60 seconds (6.0 s measured)
 - [ ] axe scan and a keyboard-only walk of every CP screen on `statamic-dev`
 - [ ] README, editor docs in `docs/`, CHANGELOG, `docs/marketplace.md`, the em dash grep
 - [ ] Install on `greenhouse` with the other bpmore addons: no shared route names, permission handles, nav sections or JS globals
@@ -176,3 +176,8 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 - Driver quirks met in setup, not Sweep's: entries need `UuidEntryModel` for string ids, and a brand-new navigation tree saves with no branches the first time.
 - Every Statamic 6 release of the driver needs PHP 8.3. CI removes it on the PHP 8.2 jobs and runs `--exclude-group=eloquent` there.
 - Multisite, Bard with nested sets and Replicator in Grid in Bard were already covered by earlier tests (Entries, TermsAndGlobals, Navigation, Assets, Walker, Apply).
+
+### 2026-10-26: Speed
+- 10,000 entries, each with a title, a markdown field and a Bard field (heading, paragraphs with bold and links, a nested list, a set with a Grid), one in ten matching: searched and the preview written in 6.0 s on Brent's Mac, against the spec's 60 s. 9,000 matches in 1,000 items.
+- Making 10,000 entries in the test takes about 2.5 minutes, so the test is in a `performance` group that `phpunit.xml` leaves out by default. Run it with `vendor/bin/pest --group=performance`. CI runs it once per push, on PHP 8.4, and allows 180 s there since its machines vary.
+- Measured with Testbench's in-memory Stache. A real flat-file site reads from its Stache cache the same way, so this should be close; a cold Stache (first request after a cache clear) will add its own warm-up time on top.
