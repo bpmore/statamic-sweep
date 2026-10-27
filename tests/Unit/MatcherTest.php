@@ -155,3 +155,32 @@ it('applies only the hits it is given', function () {
         ->and(Matcher::apply('a a a', []))->toBe('a a a')
         ->and($hits[2])->toBeInstanceOf(Hit::class)->and($hits[2]->end())->toBe(5);
 });
+
+describe('revert', function () {
+    it('gives back the exact string apply started from', function (string $subject, string $find, string $replace, Mode $mode) {
+        $hits = (new Matcher(new Query($find, $replace, $mode, false)))->find($subject);
+        $after = Matcher::apply($subject, $hits);
+
+        expect(Matcher::revert($after, $hits))->toBe($subject);
+    })->with([
+        'longer replacement' => ['Acme and acme and ACME', 'acme', 'Apex Industries', Mode::Literal],
+        'shorter replacement' => ['Acme Corporation, Acme Corporation', 'Acme Corporation', 'A', Mode::Literal],
+        'empty replacement' => ['[caption]x[/caption] y [caption]', '\[\/?caption\]', '', Mode::Regex],
+        'multibyte' => ['Café Acme — Ünï Acme', 'acme', 'Äpëx', Mode::Literal],
+        'groups' => ['555-1234 and 555-9876', '(\d{3})-(\d{4})', '$2.$1', Mode::Regex],
+    ]);
+
+    it('reverts only the hits it is given', function () {
+        $hits = (new Matcher(new Query('a', 'XYZ')))->find('a a a');
+        $chosen = [$hits[0], $hits[2]];
+
+        expect(Matcher::revert(Matcher::apply('a a a', $chosen), $chosen))->toBe('a a a');
+    });
+
+    it('refuses to guess when the text has been edited since', function () {
+        $hits = (new Matcher(new Query('Acme', 'Apex')))->find('Acme rocks');
+
+        expect(fn () => Matcher::revert('Apix rocks', $hits))->toThrow(RuntimeException::class)
+            ->and(fn () => Matcher::revert('Now Apex rocks', $hits))->toThrow(RuntimeException::class);
+    });
+});

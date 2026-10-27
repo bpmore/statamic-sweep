@@ -39,8 +39,8 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 
 ## Phase 4: Preview
 
-- [ ] Sweep store: one YAML file per sweep in `storage/sweep/<id>.yaml` (items, field paths, before, after, selection, counts, status, who, when)
-- [ ] Size check: a preview with 50,000 matches stays under 50 MB
+- [x] Sweep store: one YAML file per sweep in `storage/sweep/<id>.yaml` (items, field paths, before, after, selection, counts, status, who, when). Items are in YAML chunks beside it, see Notes.
+- [x] Size check: a preview with 50,000 matches stays under 50 MB (33.6 MB in the worst case: every match in its own 10 KB field)
 - [ ] Search runs as a queued job in chunks, writing results as each chunk finishes, with progress
 - [ ] Counts: items matched, matches total, split matches, items skipped for permission
 - [ ] `sweep:run --find= --replace= [--regex] [--scope=collection:blog] [--dry-run]` writes a preview and prints counts
@@ -118,3 +118,9 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 - `Content\Search` checks `mayEdit` before reading an item; items a person cannot edit are counted, never walked (acceptance 6). With no person (Artisan) everything in scope is searched.
 - Found and fixed: `FieldTree` loaded every field's fieldtype, so one blueprint field from an uninstalled addon threw and stopped the whole search. It now loads a fieldtype only for Grid, Group, Replicator and Bard.
 - Third-party plain-text fieldtypes are opt-in through `sweep.fieldtypes`.
+
+### 2026-10-26: Sweep store and size
+- **Differs from the spec's letter, on purpose.** The spec says one YAML file, `storage/sweep/<id>.yaml`. That file exists and holds the sweep (query, scope, counts, status, who, when), but the items go in `storage/sweep/<id>/items-0001.yaml`, 100 to a file. Measured: 50,000 matches is about 22 MB of YAML, and Symfony's parser takes 5.1 s and 415 MB of memory to read it. A site on PHP's usual 128 MB limit could not open its own preview, and every page of a paginated preview would wait 5 s. Chunks make a page one small file. Still YAML, still under `storage/sweep`.
+- **Before values are hashed, not always stored.** Keeping every before string whole makes size grow with field length: 50,000 matches in 10 KB markdown fields would be about 500 MB. A change keeps a SHA-256 of its before string, 40 bytes of context each side of each hit, and the whole string only when it is under 4 KB. Apply works on the current value once its hash matches; undo rebuilds the before value from the current one with `Matcher::revert` and checks it against the hash. Byte-identical by construction and by check. Worst case measured at 33.6 MB.
+- YAML strings round-trip byte for byte, including CRLF, trailing newlines, NUL, numeric-looking strings and `null`/`~`/`yes` (test). Literal blocks also round-tripped in Symfony 7; quoted forms are kept anyway.
+- Ids are lowercase ULIDs, and the store refuses anything else, so an id from a URL can never reach another path.

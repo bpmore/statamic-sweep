@@ -80,6 +80,41 @@ final class Matcher
     }
 
     /**
+     * The string as it was before apply(), from the string after it and the
+     * same hits. Each hit's replacement must still be where apply() put it;
+     * if one is not, the string has been edited since and nothing is
+     * guessed.
+     *
+     * @param  list<Hit>  $hits
+     *
+     * @throws RuntimeException when a replacement is not where it should be
+     */
+    public static function revert(string $after, array $hits): string
+    {
+        usort($hits, static fn (Hit $a, Hit $b): int => $a->offset <=> $b->offset);
+
+        $shift = 0;
+        $placed = [];
+
+        foreach ($hits as $hit) {
+            $at = $hit->offset + $shift;
+
+            if (substr($after, $at, strlen($hit->replacement)) !== $hit->replacement) {
+                throw new RuntimeException('The text has changed since the sweep was applied.');
+            }
+
+            $placed[] = [$at, $hit];
+            $shift += strlen($hit->replacement) - $hit->length;
+        }
+
+        foreach (array_reverse($placed) as [$at, $hit]) {
+            $after = substr_replace($after, $hit->text, $at, strlen($hit->replacement));
+        }
+
+        return $after;
+    }
+
+    /**
      * @param  array<int|string, array{0: ?string, 1: int}>  $groups
      */
     private function replacementFor(array $groups): string
