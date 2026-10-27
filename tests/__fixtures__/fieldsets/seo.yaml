@@ -1,0 +1,7 @@
+title: SEO
+fields:
+  -
+    handle: meta_title
+    field:
+      type: text
+      display: 'Meta title'

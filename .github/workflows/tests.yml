@@ -33,6 +33,12 @@ jobs:
       # `update`, not `install`: the committed lock file was resolved on the
       # newest PHP, where Laravel 13 is chosen. On 8.2 Laravel 13 cannot be
       # installed, so each PHP version resolves its own set.
+      # statamic/eloquent-driver needs PHP 8.3 in every Statamic 6 version, so
+      # the PHP 8.2 jobs run without it and skip the database tests.
+      - name: Drop the Eloquent driver on PHP 8.2
+        if: matrix.php == '8.2'
+        run: composer remove --dev statamic/eloquent-driver --no-update --no-interaction
+
       - name: Install dependencies
         run: composer update --prefer-dist --no-interaction --no-progress ${{ matrix.dependencies == 'lowest' && '--prefer-lowest --prefer-stable' || '' }}
 
@@ -42,7 +48,13 @@ jobs:
         run: composer show statamic/cms | grep -E '^versions\s*:\s*\* v6\.'
 
       - name: Tests
-        run: vendor/bin/pest --ci
+        run: vendor/bin/pest --ci ${{ matrix.php == '8.2' && '--exclude-group=eloquent' || '' }}
+
+      # Spec: 10,000 entries searched in under 60 seconds. Once, on the
+      # newest PHP: it takes minutes to set up.
+      - name: Speed
+        if: matrix.php == '8.4' && matrix.dependencies == 'highest'
+        run: vendor/bin/pest --ci --group=performance
 
   lint:
     name: Formatting

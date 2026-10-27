@@ -8,6 +8,13 @@
             <directory>tests</directory>
         </testsuite>
     </testsuites>
+    <!-- The 10,000-entry speed test takes minutes to set up. Run it with
+         with the performance group (see CI). It runs once per CI push. -->
+    <groups>
+        <exclude>
+            <group>performance</group>
+        </exclude>
+    </groups>
     <source>
         <include>
             <directory>src</directory>

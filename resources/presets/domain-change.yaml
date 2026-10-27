@@ -1,0 +1,7 @@
+title: 'Domain change'
+description: 'Moves links from an old address to a new one, and from http to https. Edit both addresses before you preview.'
+find: 'https?://old\.example\.com\b'
+replace: 'https://www.example.com'
+mode: regex
+case_sensitive: false
+preserve_case: false

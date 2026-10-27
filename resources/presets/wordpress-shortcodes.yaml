@@ -1,0 +1,7 @@
+title: 'WordPress shortcode cleanup'
+description: 'Removes leftover [caption], [embed] and [gallery] shortcodes, opening and closing, and keeps the text between them. Add other shortcode names to the list in brackets.'
+find: '\[/?(?:caption|embed|gallery)\b[^\]]*\]'
+replace: ''
+mode: regex
+case_sensitive: false
+preserve_case: false
