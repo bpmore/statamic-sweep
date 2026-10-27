@@ -17,8 +17,8 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 
 ## Phase 2: The engine (plain PHP in `src/Engine`, no Statamic)
 
-- [ ] Matcher: `literal`, `whole word`, `regex` with capture groups (`$1`, `${1}`), case sensitivity. An invalid regex is refused with a message, never at apply time. Acceptance 8.
-- [ ] Case-preserving replace for the rebrand preset: "Acme" to "Apex", "ACME" to "APEX", "acme" to "apex"
+- [x] Matcher: `literal`, `whole word`, `regex` with capture groups (`$1`, `${1}`), case sensitivity. An invalid regex is refused with a message, never at apply time. Acceptance 8.
+- [x] Case-preserving replace for the rebrand preset: "Acme" to "Apex", "ACME" to "APEX", "acme" to "apex"
 - [ ] Plain strings: one change per field, every match listed with its offset and a short context for the diff
 - [ ] Bard (ProseMirror JSON): replace inside `text` node strings, `link.href` and `image.alt` only; node types, marks and set data untouched. Acceptance 1.
 - [ ] Split matches: a match spanning two adjacent text nodes is reported, never replaced. Acceptance 2.
@@ -89,3 +89,12 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 - `apply sweep`, `undo sweep` and `manage sweep presets` are children of `use sweep` in the roles screen. `Auth\Permissions` still checks `use sweep` alongside each, since a role file edited by hand can hold a child alone.
 - UI strings live in `lang/en/messages.php` as `sweep::messages.<key>`. Statamic's translator sends namespaced addon strings to the CP, so Vue uses the same keys. The test reading the permission group label as "Sweep" proves the file is loaded.
 - `Nav::build()` is empty under Testbench outside a real CP request; the nav test runs the extension against a fresh Nav, as Lifecycle's does.
+
+### 2026-10-26: Matcher and case-preserving replace
+- Every mode compiles to one PCRE pattern with `u`, so offsets are UTF-8 bytes and case folding works past ASCII.
+- Whole word guards only an end that is itself a word character, so `[caption` as a whole word still matches after a letter.
+- Regex replacements follow preg_replace exactly, checked against it in a test: `$10` is group 10, not group 1 then 0 (an early guess was wrong). `${1}0` is the way to write group 1 then a 0.
+- Literal and whole-word replacements never expand `$1`.
+- Empty matches are dropped (`x*`, `^`), so a pattern cannot insert text at every position. To be stated in the editor docs.
+- An invalid pattern is refused when the `Query` is built, with PCRE's own reason and never Sweep's `/` delimiter.
+- Case preserving knows three shapes (CAPS, lower, Title); anything else gets the replacement as typed.
