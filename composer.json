@@ -1,0 +1,69 @@
+{
+    "name": "bpmore/statamic-sweep",
+    "description": "Structure-aware search and replace for Statamic 6: preview every change as a diff, apply it as one undoable batch, and leave Bard, Replicator, Grid and Markdown intact.",
+    "type": "statamic-addon",
+    "keywords": [
+        "statamic",
+        "search-and-replace",
+        "find-and-replace",
+        "bulk-edit",
+        "migration"
+    ],
+    "homepage": "https://github.com/bpmore/statamic-sweep",
+    "license": "proprietary",
+    "support": {
+        "issues": "https://github.com/bpmore/statamic-sweep/issues",
+        "source": "https://github.com/bpmore/statamic-sweep",
+        "docs": "https://github.com/bpmore/statamic-sweep/blob/main/README.md"
+    },
+    "authors": [
+        {
+            "name": "Brent Passmore"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "statamic/cms": "^6.27"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.18",
+        "orchestra/testbench": "^10.8 || ^11.0",
+        "pestphp/pest": "^3.0 || ^4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Bpmore\\Sweep\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Bpmore\\Sweep\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "statamic": {
+            "name": "Sweep",
+            "slug": "sweep",
+            "description": "Search and replace across the whole site, with a preview of every change and an undo."
+        },
+        "laravel": {
+            "providers": [
+                "Bpmore\\Sweep\\ServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "pixelfear/composer-dist-plugin": true,
+            "php-http/discovery": true
+        },
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "scripts": {
+        "test": "pest",
+        "lint": "pint"
+    }
+}

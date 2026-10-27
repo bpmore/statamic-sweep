@@ -1,0 +1,13 @@
+# Left out of the archive Composer downloads: only the shipped addon goes to a site.
+/.claude        export-ignore
+/.github        export-ignore
+/.gitattributes export-ignore
+/tests          export-ignore
+/PROGRESS.md    export-ignore
+/run-build.sh   export-ignore
+/CLAUDE.md      export-ignore
+/AGENTS.md      export-ignore
+/phpunit.xml    export-ignore
+/pint.json      export-ignore
+/docs/SPECS.md       export-ignore
+/docs/CONVENTIONS.md export-ignore
