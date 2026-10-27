@@ -24,8 +24,11 @@ return [
     |--------------------------------------------------------------------------
     |
     | The number of days after a sweep is applied that it can still be undone.
-    | After that its file is deleted on the daily schedule, and the history no
-    | longer lists it.
+    | After that, `sweep:prune` (on the daily schedule) deletes what undo
+    | needs: the list of changed items and their old text. The history keeps
+    | the sweep itself: who ran it, when, what it found and replaced, and the
+    | counts. A preview that was never applied is pruned the same number of
+    | days after it was made.
     |
     */
 

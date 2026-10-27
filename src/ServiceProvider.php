@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bpmore\Sweep;
 
 use Bpmore\Sweep\Auth\Permissions;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Route;
 use Statamic\Facades\CP\Nav;
 use Statamic\Facades\Permission;
@@ -20,6 +21,7 @@ class ServiceProvider extends AddonServiceProvider
 {
     protected $commands = [
         Commands\RunSweep::class,
+        Commands\PruneSweeps::class,
     ];
 
     protected $routes = [
@@ -100,5 +102,11 @@ class ServiceProvider extends AddonServiceProvider
                 ->route('sweep.index')
                 ->icon('replace');
         });
+    }
+
+    /** Undo data past the undo period goes once a day. */
+    protected function schedule(Schedule $schedule): void
+    {
+        $schedule->command('sweep:prune')->daily();
     }
 }

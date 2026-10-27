@@ -56,9 +56,9 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 
 ## Phase 6: Undo and history
 
-- [ ] Undo: restore before values only where the current value still equals the after value; list the rest as conflicts. Byte-identical restore. Acceptance 5.
-- [ ] Retention: undo available for 30 days (config), pruned on a schedule
-- [ ] Status per sweep: previewed, applied, undone, partially undone
+- [x] Undo: restore before values only where the current value still equals the after value; list the rest as conflicts. Byte-identical restore. Acceptance 5.
+- [x] Retention: undo available for 30 days (config), pruned on a schedule
+- [x] Status per sweep: previewed, applied, undone, partially undone
 
 ## Phase 7: Control panel (WCAG 2.2 AA is a release blocker)
 
@@ -140,3 +140,11 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 - Apply is guarded by a cache lock so two people pressing Apply at once apply it once. A second apply of the same sweep is refused.
 - `sweep:run --apply` searches and applies in one run; `sweep:run --sweep=<id> --apply` applies an earlier preview.
 - Testing note: `vendor/bin/pest | grep` hid a fatal error once (two test files declared the same helper). Check the exit code, not just the summary line.
+
+### 2026-10-26: Undo and history
+- Undo works string by string: a string is put back only if its hash still equals the after hash; the before value is rebuilt with `Matcher::revert` and must hash to the preview's before hash. Anything else is a conflict and is left alone. An item with some strings restored and some not is `partial`, and the sweep is then `partially_undone`.
+- Acceptance 5 tested with CRLF, trailing whitespace, tabs, numeric-looking text, `null`/`~`/`yes`, emoji, Bard marks and link hrefs: every untouched item's field values come back identical.
+- Undo finds an item by `reference_after`, so a term whose first-site slug the sweep changed is found under its new slug.
+- One Git commit for an undo too, with `Undo sweep: <find> → <replace>`.
+- `sweep:prune` runs daily: past `undo_days` (from apply, or from creation for a preview never applied) it deletes a sweep's items and keeps the sweep record, so the history still shows who, when, what and counts. Undo is then unavailable. This differs from the earlier config comment, which said the history would forget it.
+- Not tested here, noted for the CP: a renamed term's old id lingered in the test Stache after `slug()` + `save()`; the CP renames terms the same way, so this is Statamic's behaviour under `PreventsSavingStacheItemsToDisk`, not Sweep's. Worth a look on `statamic-dev` with real files.

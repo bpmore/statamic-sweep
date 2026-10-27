@@ -42,6 +42,7 @@ final class Sweep
         public ?array $undoneBy = null,
         public array $undoTally = [],
         public ?string $error = null,
+        public bool $pruned = false,
     ) {}
 
     /**
@@ -67,6 +68,7 @@ final class Sweep
             'undone_by' => $this->undoneBy,
             'undo_tally' => $this->undoTally,
             'error' => $this->error,
+            'pruned' => $this->pruned,
         ];
     }
 
@@ -93,6 +95,7 @@ final class Sweep
             undoneBy: $values['undone_by'] ?? null,
             undoTally: (array) ($values['undo_tally'] ?? []),
             error: $values['error'] ?? null,
+            pruned: (bool) ($values['pruned'] ?? false),
         );
     }
 }

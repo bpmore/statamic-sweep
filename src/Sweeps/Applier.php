@@ -12,6 +12,7 @@ use Bpmore\Sweep\Engine\Matcher;
 use Bpmore\Sweep\Engine\Paths;
 use Closure;
 use Illuminate\Support\Carbon;
+use RuntimeException;
 use Statamic\Contracts\Auth\User;
 use Statamic\Facades\Git;
 use Statamic\Git\Subscriber as GitSubscriber;
@@ -53,6 +54,8 @@ final class Applier
     /** Outcomes an item can end an undo with. */
     public const RESTORED = 'restored';
 
+    public const PARTIAL = 'partial';
+
     public const CONFLICT = 'conflict';
 
     public function __construct(
@@ -63,6 +66,11 @@ final class Applier
     public static function message(Sweep $sweep): string
     {
         return "Sweep: {$sweep->query->find} → {$sweep->query->replace}";
+    }
+
+    public static function undoMessage(Sweep $sweep): string
+    {
+        return "Undo sweep: {$sweep->query->find} → {$sweep->query->replace}";
     }
 
     public function apply(string $id, ?User $user): void
@@ -108,6 +116,133 @@ final class Applier
         $sweep->appliedAt = Carbon::now()->toIso8601String();
         $sweep->appliedBy = Sweeps::person($user);
         $this->store->save($sweep);
+    }
+
+    /**
+     * Puts back every string the sweep changed that nobody has edited since.
+     * A string that is different now is a conflict: it is left as it is and
+     * listed, because putting the old text back would throw away somebody's
+     * edit.
+     */
+    public function undo(string $id, ?User $user): void
+    {
+        $sweep = $this->store->find($id);
+
+        if ($sweep === null || $sweep->status !== Status::Undoing) {
+            return;
+        }
+
+        $tally = array_fill_keys([self::RESTORED, self::PARTIAL, self::CONFLICT, self::MISSING, self::NOT_PERMITTED, self::FAILED], 0);
+        $done = 0;
+
+        $wrote = $this->batch(function () use ($sweep, $user, &$tally, &$done): bool {
+            $wrote = false;
+
+            for ($chunk = 1; $chunk <= $sweep->chunks; $chunk++) {
+                $this->store->updateChunk($sweep->id, $chunk, function (array $records) use ($sweep, $user, &$tally, &$wrote, &$done): array {
+                    foreach ($records as $i => $record) {
+                        $done++;
+
+                        if (($record['outcome'] ?? null) !== self::APPLIED || isset($record['undo'])) {
+                            continue;
+                        }
+
+                        $records[$i] = $this->undoOne($sweep, $record, $user);
+                        $tally[$records[$i]['undo']]++;
+                        $wrote = $wrote || in_array($records[$i]['undo'], [self::RESTORED, self::PARTIAL], true);
+                    }
+
+                    return $records;
+                });
+
+                $sweep->progress = ['phase' => 'undo', 'done' => $done, 'total' => $sweep->items];
+                $sweep->undoTally = $tally;
+                $this->store->save($sweep);
+            }
+
+            return $wrote;
+        });
+
+        if ($wrote) {
+            $this->commit(self::undoMessage($sweep), $user);
+        }
+
+        $leftOver = $tally[self::PARTIAL] + $tally[self::CONFLICT] + $tally[self::MISSING] + $tally[self::NOT_PERMITTED] + $tally[self::FAILED];
+
+        $sweep->status = $leftOver === 0 ? Status::Undone : Status::PartiallyUndone;
+        $sweep->undoTally = $tally;
+        $sweep->undoneAt = Carbon::now()->toIso8601String();
+        $sweep->undoneBy = Sweeps::person($user);
+        $this->store->save($sweep);
+    }
+
+    /**
+     * @param  array<string, mixed>  $record
+     * @return array<string, mixed>
+     */
+    private function undoOne(Sweep $sweep, array $record, ?User $user): array
+    {
+        $item = $this->items->findFor((string) ($record['reference_after'] ?? $record['reference']), $sweep->scope);
+
+        if ($item === null) {
+            return [...$record, 'undo' => self::MISSING];
+        }
+
+        if ($user !== null && ! $item->mayEdit($user)) {
+            return [...$record, 'undo' => self::NOT_PERMITTED];
+        }
+
+        $data = $item->data();
+        $restored = 0;
+        $conflicts = 0;
+
+        foreach ($record['changes'] as $c => $change) {
+            if (! isset($change['after_hash'])) {
+                continue;
+            }
+
+            $current = Paths::get($data, $change['path']);
+            $before = null;
+
+            if (is_string($current) && SweepStore::hash($current) === $change['after_hash']) {
+                try {
+                    $before = Matcher::revert($current, self::selectedHits($change));
+                } catch (RuntimeException) {
+                    $before = null;
+                }
+            }
+
+            // Rebuilt, then checked against what the preview saw: the bytes
+            // put back are the bytes that were there, or nothing is.
+            if ($before === null || SweepStore::hash($before) !== $change['before_hash']) {
+                $record['changes'][$c]['undo'] = self::CONFLICT;
+                $conflicts++;
+
+                continue;
+            }
+
+            $data = Paths::set($data, $change['path'], $before);
+            $record['changes'][$c]['undo'] = self::RESTORED;
+            $restored++;
+        }
+
+        if ($restored === 0) {
+            return [...$record, 'undo' => self::CONFLICT];
+        }
+
+        try {
+            $item->write($data, self::undoMessage($sweep), $user);
+        } catch (Throwable $e) {
+            foreach ($record['changes'] as $c => $change) {
+                if (($change['undo'] ?? null) === self::RESTORED) {
+                    unset($record['changes'][$c]['undo']);
+                }
+            }
+
+            return [...$record, 'undo' => self::FAILED, 'undo_message' => $e->getMessage()];
+        }
+
+        return [...$record, 'undo' => $conflicts === 0 ? self::RESTORED : self::PARTIAL];
     }
 
     /**

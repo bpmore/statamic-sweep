@@ -216,6 +216,14 @@ final class SweepStore
         $this->writeChunk($id, $chunk, $change($this->readChunk($id, $chunk)));
     }
 
+    /** Removes a sweep's items and keeps the sweep itself, for the history. */
+    public function deleteItems(string $id): void
+    {
+        if (self::validId($id)) {
+            $this->files->deleteDirectory($this->path.'/'.$id);
+        }
+    }
+
     /** Bytes on disk for one sweep, items included. */
     public function size(string $id): int
     {

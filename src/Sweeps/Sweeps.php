@@ -12,6 +12,7 @@ use Bpmore\Sweep\Engine\Query;
 use Bpmore\Sweep\Engine\Result;
 use Bpmore\Sweep\Jobs\ApplySweep;
 use Bpmore\Sweep\Jobs\SearchSweep;
+use Bpmore\Sweep\Jobs\UndoSweep;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Statamic\Contracts\Auth\User;
@@ -173,6 +174,108 @@ final class Sweeps
 
         try {
             $this->applier->apply($id, $user);
+        } catch (Throwable $e) {
+            $this->fail($this->store->find($id) ?? $sweep, $e->getMessage());
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Whether an applied sweep can still be undone: applied, and within the
+     * undo period config sets.
+     */
+    public function undoable(Sweep $sweep): bool
+    {
+        return $sweep->status === Status::Applied
+            && ! $sweep->pruned
+            && $sweep->appliedAt !== null
+            && Carbon::parse($sweep->appliedAt)->addDays((int) config('sweep.undo_days', 30))->isFuture();
+    }
+
+    /**
+     * Drops the items of every sweep older than the undo period, counted
+     * from when it was applied, or started if it never was. The sweep itself
+     * stays, so the history still says who changed what and when. A sweep a
+     * job is working on is left alone.
+     *
+     * @return int how many sweeps were pruned
+     */
+    public function prune(): int
+    {
+        $cutoff = Carbon::now()->subDays((int) config('sweep.undo_days', 30));
+        $pruned = 0;
+
+        foreach ($this->store->all() as $sweep) {
+            if ($sweep->pruned || $sweep->status->isWorking()) {
+                continue;
+            }
+
+            if (Carbon::parse($sweep->appliedAt ?? $sweep->createdAt)->isAfter($cutoff)) {
+                continue;
+            }
+
+            $this->store->deleteItems($sweep->id);
+            $sweep->pruned = true;
+            $this->store->save($sweep);
+            $pruned++;
+        }
+
+        return $pruned;
+    }
+
+    /**
+     * Queues an applied sweep to be undone, as this person. Returns false,
+     * changing nothing, when it cannot be undone.
+     */
+    public function undo(Sweep $sweep, ?User $user, bool $now = false): bool
+    {
+        $fresh = Cache::lock('sweep-'.$sweep->id, 10)->get(function () use ($sweep): ?Sweep {
+            $fresh = $this->store->find($sweep->id);
+
+            if ($fresh === null || ! $this->undoable($fresh)) {
+                return null;
+            }
+
+            $fresh->status = Status::Undoing;
+            $fresh->progress = ['phase' => 'undo', 'done' => 0, 'total' => $fresh->items];
+            $this->store->save($fresh);
+
+            return $fresh;
+        });
+
+        if (! $fresh instanceof Sweep) {
+            return false;
+        }
+
+        $job = [$fresh->id, $user ? (string) $user->id() : null];
+        $now ? UndoSweep::dispatchSync(...$job) : UndoSweep::dispatch(...$job);
+
+        return true;
+    }
+
+    /** The queued half of undo(). */
+    public function runUndo(string $id, ?string $userId): void
+    {
+        $sweep = $this->store->find($id);
+
+        if ($sweep === null || $sweep->status !== Status::Undoing) {
+            return;
+        }
+
+        $user = $userId !== null ? Users::find($userId) : null;
+
+        if ($userId !== null && $user === null) {
+            // Back to applied, so somebody else can undo it.
+            $sweep->status = Status::Applied;
+            $sweep->error = __('sweep::messages.error_undoer_gone');
+            $this->store->save($sweep);
+
+            return;
+        }
+
+        try {
+            $this->applier->undo($id, $user);
         } catch (Throwable $e) {
             $this->fail($this->store->find($id) ?? $sweep, $e->getMessage());
 
