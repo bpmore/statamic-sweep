@@ -175,7 +175,7 @@ invalidation, so each changed item is invalidated by the site's own rules.
 
 ## Requirements
 
-PHP 8.2+ and Statamic 6.27 or newer. No database is needed. Content in a
+PHP 8.2+ and Statamic 6.31 or newer. No database is needed. Content in a
 database through `statamic/eloquent-driver` works too.
 
 ## Support

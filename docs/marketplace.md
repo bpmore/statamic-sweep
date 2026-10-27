@@ -98,7 +98,7 @@ in light and dark mode.
 
 ## Requirements
 
-Statamic 6.27+, PHP 8.2+. No database required.
+Statamic 6.31+, PHP 8.2+. No database required.
 
 ## Screenshots
 

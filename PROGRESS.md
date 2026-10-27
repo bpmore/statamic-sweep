@@ -73,8 +73,8 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 - [x] Fixtures: multisite, Eloquent driver, Bard with nested sets, Replicator inside Grid inside Bard
 - [x] Performance: 10,000 entries searched in under 60 seconds (6.0 s measured)
 - [x] axe scan and a keyboard-only walk of every CP screen (on the throwaway 6.38 site, same build as `statamic-dev`)
-- [ ] README, editor docs in `docs/`, CHANGELOG, `docs/marketplace.md`, the em dash grep
-- [ ] Install on `greenhouse` with the other bpmore addons: no shared route names, permission handles, nav sections or JS globals
+- [x] README, editor docs in `docs/`, CHANGELOG, `docs/marketplace.md`, the em dash grep
+- [ ] Install on `greenhouse` with the other bpmore addons: no shared route names, permission handles, nav sections or JS globals. **Clash check done (none); the install itself waits on the GitHub repo**, see Notes.
 
 ## Notes
 <!-- Record surprises, decisions and blockers here. If a task is wrong or blocked, write why and stop. -->
@@ -195,3 +195,8 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 - Keyboard walk: every control on the search screen is reached by Tab in reading order with a visible focus ring; checkboxes toggle with Space; the confirm flow works by keyboard alone.
 - How to repeat the scan: copy `node_modules/axe-core/axe.min.js` into a site's `public/`, open a Sweep screen, load it with a script tag and run `axe.run(document, { runOnly: ['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa','best-practice'] })`, once with `dark` on `<html>`.
 - Not automated in CI. That needs a served Statamic app and a browser in CI; Pest 4's browser plugin could do it later.
+
+### 2026-10-26: Docs, oldest supported Statamic, greenhouse
+- Written: `README.md` (install, queue and scheduler, permissions, config, what is searched, commands, Git and static cache, screenshots list), `docs/using-sweep.md` for editors, `CHANGELOG.md` (1.0.0, unreleased), `docs/marketplace.md`. The em dash grep finds none outside `docs/SPECS.md` and `docs/CONVENTIONS.md`.
+- **Requirement raised from Statamic 6.27 to 6.31, against `docs/CONVENTIONS.md`.** On the lowest dependencies Composer allows, it resolves Statamic 6.31 (with Laravel 12, Carbon 3.8.4, Pest 3, Testbench 10), and all 202 tests pass there. 6.27 to 6.30 cannot be installed with the test tools, so nothing below 6.31 has been run, and the requirement now says what was tested.
+- `greenhouse` is a Git-tracked site with deploy docs that installs every addon from GitHub; Sweep is not on GitHub yet. Rather than add a local path repository to a deployable site, the clash check was done against the 20 bpmore addons installed there: no route names under `statamic.cp.sweep.`, no `use/apply/undo sweep` or `manage sweep presets` permissions, no `sweep:` commands, no `sweep/` Inertia pages, no `sweep` slug, config, view or lang namespace, no `.sweep-` CSS, no `Bpmore\Sweep` namespace, no `sweep-` cache locks, no JS globals, and no `storage/sweep` or `resources/sweep` folders. A positive control (Lifecycle's route names) was found, so the searches work. Sweep defines no JS globals of its own. Install it on `greenhouse` for real once the repo exists.
