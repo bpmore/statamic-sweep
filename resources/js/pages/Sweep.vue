@@ -1,5 +1,5 @@
 <script setup>
-import { computed, getCurrentInstance, ref, watch } from 'vue';
+import { computed, getCurrentInstance, nextTick, ref, watch } from 'vue';
 import { Head, router, usePoll } from '@statamic/cms/inertia';
 import { Alert, Badge, Button, Card, Checkbox, Header, Heading, Panel, PanelHeader, Text } from '@statamic/cms/ui';
 
@@ -71,8 +71,29 @@ const outcomes = computed(() => Object.entries({ ...props.sweep.apply_tally, ...
 
 const editable = computed(() => props.sweep.status === 'previewed' && props.mayApply);
 
+// Ticking a box saves in the background and changes the page in place. A
+// page visit would do too, but the control panel moves focus to the page
+// body after every visit, which would throw a keyboard user back to the top
+// after each choice.
+const http = getCurrentInstance().proxy.$axios;
+const items = ref(props.items);
+watch(() => props.items, (fresh) => (items.value = fresh));
+const saveError = ref(null);
+
 function select(payload) {
-    router.patch(props.urls.select, payload, { preserveScroll: true, preserveState: true, only: ['items'] });
+    const item = items.value.data.find((i) => i.index === payload.item);
+    if (payload.change === undefined) {
+        item.selected = payload.selected;
+    } else {
+        item.changes[payload.change].hits[payload.hit].selected = payload.selected;
+        if (payload.selected) item.selected = true;
+    }
+
+    saveError.value = null;
+    http.patch(props.urls.select, payload).catch(() => {
+        saveError.value = t('sweep::messages.error_selection_not_saved');
+        router.reload({ only: ['items'] });
+    });
 }
 
 function go(page) {
@@ -82,6 +103,22 @@ function go(page) {
 function act(which) {
     confirming.value = null;
     router.post(props.urls[which], {}, { preserveScroll: true });
+}
+
+// Opening a confirmation replaces the button that opened it, so focus goes
+// to the confirming button; cancelling puts it back on the first one.
+function focusOn(key) {
+    nextTick(() => document.querySelector(`[data-sweep-focus="${key}"]`)?.focus());
+}
+
+function ask(which) {
+    confirming.value = which;
+    focusOn(`confirm-${which}`);
+}
+
+function cancel(which) {
+    confirming.value = null;
+    focusOn(`open-${which}`);
 }
 
 const badge = (status) => ({
@@ -104,10 +141,10 @@ const badge = (status) => ({
             <Heading level="2">{{ __('sweep::messages.sweep_summary') }}</Heading>
             <Badge :color="badge(sweep.status)" :text="__(`sweep::messages.status_${sweep.status}`)" />
         </PanelHeader>
-        <div class="space-y-4 p-4">
+        <Card class="space-y-4">
             <dl class="sweep-facts">
                 <dt class="font-medium">{{ __('sweep::messages.field_find') }}</dt>
-                <dd><code>{{ sweep.find }}</code> <span class="text-gray-600">({{ __(`sweep::messages.mode_${sweep.mode}`) }}{{ sweep.case_sensitive ? '' : ', ' + __('sweep::messages.any_case') }}{{ sweep.preserve_case ? ', ' + __('sweep::messages.case_kept') : '' }})</span></dd>
+                <dd><code>{{ sweep.find }}</code> <span class="sweep-muted">({{ __(`sweep::messages.mode_${sweep.mode}`) }}{{ sweep.case_sensitive ? '' : ', ' + __('sweep::messages.any_case') }}{{ sweep.preserve_case ? ', ' + __('sweep::messages.case_kept') : '' }})</span></dd>
                 <dt class="font-medium">{{ __('sweep::messages.field_replace') }}</dt>
                 <dd><code>{{ sweep.replace }}</code></dd>
                 <dt class="font-medium">{{ __('sweep::messages.where') }}</dt>
@@ -126,11 +163,11 @@ const badge = (status) => ({
 
             <dl class="flex flex-wrap gap-6">
                 <div v-for="[key, value] in counts" :key="key">
-                    <dt class="text-sm text-gray-600">{{ __(`sweep::messages.${key}`) }}</dt>
+                    <dt class="text-sm sweep-muted">{{ __(`sweep::messages.${key}`) }}</dt>
                     <dd class="text-xl font-medium">{{ value.toLocaleString() }}</dd>
                 </div>
                 <div v-for="[key, value] in outcomes" :key="key">
-                    <dt class="text-sm text-gray-600">{{ __(`sweep::messages.outcome_${key}`) }}</dt>
+                    <dt class="text-sm sweep-muted">{{ __(`sweep::messages.outcome_${key}`) }}</dt>
                     <dd class="text-xl font-medium">{{ value.toLocaleString() }}</dd>
                 </div>
             </dl>
@@ -159,27 +196,29 @@ const badge = (status) => ({
 
             <div class="flex flex-wrap items-center gap-3">
                 <template v-if="mayApply && sweep.status === 'previewed' && sweep.items > 0">
-                    <Button v-if="confirming !== 'apply'" variant="primary" :text="__('sweep::messages.apply_button')" @click="confirming = 'apply'" />
+                    <Button v-if="confirming !== 'apply'" data-sweep-focus="open-apply" variant="primary" :text="__('sweep::messages.apply_button')" @click="ask('apply')" />
                     <template v-else>
                         <Text>{{ __('sweep::messages.apply_confirm', { items: sweep.tally.matched_items }) }}</Text>
-                        <Button variant="primary" :text="__('sweep::messages.apply_confirm_button')" @click="act('apply')" />
-                        <Button variant="ghost" :text="__('sweep::messages.cancel')" @click="confirming = null" />
+                        <Button data-sweep-focus="confirm-apply" variant="primary" :text="__('sweep::messages.apply_confirm_button')" @click="act('apply')" />
+                        <Button variant="ghost" :text="__('sweep::messages.cancel')" @click="cancel('apply')" />
                     </template>
                 </template>
                 <template v-if="mayUndo && sweep.undoable">
-                    <Button v-if="confirming !== 'undo'" :text="__('sweep::messages.undo_button')" @click="confirming = 'undo'" />
+                    <Button v-if="confirming !== 'undo'" data-sweep-focus="open-undo" :text="__('sweep::messages.undo_button')" @click="ask('undo')" />
                     <template v-else>
                         <Text>{{ __('sweep::messages.undo_confirm') }}</Text>
-                        <Button variant="danger" :text="__('sweep::messages.undo_confirm_button')" @click="act('undo')" />
-                        <Button variant="ghost" :text="__('sweep::messages.cancel')" @click="confirming = null" />
+                        <Button data-sweep-focus="confirm-undo" variant="danger" :text="__('sweep::messages.undo_confirm_button')" @click="act('undo')" />
+                        <Button variant="ghost" :text="__('sweep::messages.cancel')" @click="cancel('undo')" />
                     </template>
                 </template>
             </div>
-        </div>
+        </Card>
     </Panel>
 
     <section class="mt-6" :aria-label="__('sweep::messages.results')">
         <Heading level="2" class="mb-3">{{ __('sweep::messages.results') }}</Heading>
+
+        <Alert v-if="saveError" type="error" :text="saveError" />
 
         <Text v-if="items.total === 0 && !working">{{ __('sweep::messages.no_results') }}</Text>
 
@@ -197,13 +236,13 @@ const badge = (status) => ({
                 </header>
                 <Text v-if="item.outcome_message" class="mt-1">{{ item.outcome_message }}</Text>
 
-                <Checkbox
-                    v-if="editable && item.changes.length"
-                    class="mt-3"
-                    :label="__('sweep::messages.include_item')"
-                    :model-value="item.selected"
-                    @update:model-value="(on) => select({ item: item.index, selected: on })"
-                />
+                <div v-if="editable && item.changes.length" class="mt-3">
+                    <Checkbox
+                        :label="__('sweep::messages.include_item')"
+                        :model-value="item.selected"
+                        @update:model-value="(on) => select({ item: item.index, selected: on })"
+                    />
+                </div>
 
                 <div v-for="(change, c) in item.changes" :key="c" class="mt-3">
                     <p class="text-sm font-medium">
@@ -212,14 +251,18 @@ const badge = (status) => ({
                     </p>
                     <ol class="mt-1 space-y-2">
                         <li v-for="(hit, h) in change.hits" :key="h" class="flex items-start gap-3">
-                            <Checkbox
-                                v-if="editable"
-                                solo
-                                :label="__('sweep::messages.include_match', { n: h + 1, text: hit.text })"
-                                :model-value="item.selected && hit.selected"
-                                @update:model-value="(on) => select({ item: item.index, change: c, hit: h, selected: on })"
-                            />
-                            <p class="sweep-diff font-mono text-sm" :class="{ 'opacity-60': !item.selected || !hit.selected }">
+                            <div v-if="editable">
+                                <Checkbox
+                                    solo
+                                    :label="__('sweep::messages.include_match', { n: h + 1, text: hit.text })"
+                                    :model-value="item.selected && hit.selected"
+                                    @update:model-value="(on) => select({ item: item.index, change: c, hit: h, selected: on })"
+                                />
+                            </div>
+                            <!-- A match left out says so in words and loses its diff
+                                 colours; it is not faded, which would make it unreadable. -->
+                            <p class="sweep-diff font-mono text-sm" :class="{ 'sweep-diff-off': !item.selected || !hit.selected }">
+                                <span v-if="!item.selected || !hit.selected" class="sweep-left-out">{{ __('sweep::messages.left_out') }} </span>
                                 <span>{{ hit.before }}</span><del><span class="sr-only">{{ __('sweep::messages.diff_removed') }}</span>{{ hit.text }}</del><ins><span class="sr-only">{{ __('sweep::messages.diff_added') }}</span>{{ hit.replacement }}</ins><span>{{ hit.after }}</span>
                             </p>
                         </li>
@@ -241,7 +284,7 @@ const badge = (status) => ({
 
         <nav v-if="items.pages > 1" class="mt-4 flex items-center gap-3" :aria-label="__('sweep::messages.pages')">
             <Button variant="ghost" :disabled="items.page <= 1" :text="__('sweep::messages.previous')" @click="go(items.page - 1)" />
-            <Text>{{ __('sweep::messages.page_of', { page: items.page, pages: items.pages }) }}</Text>
+            <Text>{{ __('sweep::messages.page_of', { current: items.page, total: items.pages }) }}</Text>
             <Button variant="ghost" :disabled="items.page >= items.pages" :text="__('sweep::messages.next')" @click="go(items.page + 1)" />
         </nav>
     </section>

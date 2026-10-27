@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Head, router, useForm } from '@statamic/cms/inertia';
-import { Alert, Button, Checkbox, Field, Header, Input, Panel, PanelHeader, Heading, Radio, RadioGroup, Select, Text } from '@statamic/cms/ui';
+import { Alert, Button, Card, Checkbox, Field, Header, Input, Panel, PanelHeader, Heading, Radio, RadioGroup, Select, Text } from '@statamic/cms/ui';
 
 /**
  * The search screen: what to find, what to put in its place, and where to
@@ -98,13 +98,13 @@ function savePreset() {
 
     <Text class="mb-6">{{ __('sweep::messages.search_intro') }}</Text>
 
-    <form novalidate @submit.prevent="submit">
+    <form class="sweep-search" novalidate @submit.prevent="submit">
         <Panel>
             <PanelHeader>
                 <Heading level="2">{{ __('sweep::messages.search_what') }}</Heading>
             </PanelHeader>
 
-            <div class="space-y-6 p-4">
+            <Card class="space-y-6">
                 <Field v-if="presets.length" :label="__('sweep::messages.preset_start')" :instructions="chosenPreset?.description" id="sweep-preset">
                     <Select id="sweep-preset" :model-value="preset" :options="presetOptions" :placeholder="__('sweep::messages.preset_none')" clearable @update:model-value="usePreset" />
                 </Field>
@@ -130,7 +130,7 @@ function savePreset() {
                     <Checkbox v-model="form.case_sensitive" :label="__('sweep::messages.field_case_sensitive')" />
                     <Checkbox v-model="form.preserve_case" :label="__('sweep::messages.field_preserve_case')" :description="__('sweep::messages.field_preserve_case_help')" />
                 </div>
-            </div>
+            </Card>
         </Panel>
 
         <Panel class="mt-6">
@@ -138,7 +138,7 @@ function savePreset() {
                 <Heading level="2">{{ __('sweep::messages.search_where') }}</Heading>
             </PanelHeader>
 
-            <div class="space-y-6 p-4">
+            <Card class="space-y-6">
                 <template v-for="kind in kinds" :key="kind">
                     <fieldset v-if="options[kind].length">
                         <legend class="mb-2 font-medium">{{ __(`sweep::messages.kind_${kind}`) }}</legend>
@@ -158,7 +158,7 @@ function savePreset() {
                     </fieldset>
                 </template>
 
-                <p v-if="form.errors.collections" class="text-red-600" role="alert">{{ form.errors.collections }}</p>
+                <p v-if="form.errors.collections" class="sweep-error" role="alert">{{ form.errors.collections }}</p>
 
                 <fieldset v-if="options.sites.length">
                     <legend class="mb-1 font-medium">{{ __('sweep::messages.field_sites') }}</legend>
@@ -198,7 +198,7 @@ function savePreset() {
                     <Checkbox v-model="form.slugs" :label="__('sweep::messages.field_slugs')" />
                     <Alert v-if="form.slugs" type="warning" :text="__('sweep::messages.slugs_warning')" />
                 </div>
-            </div>
+            </Card>
         </Panel>
 
         <div class="mt-6 flex flex-wrap items-center gap-4">

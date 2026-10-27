@@ -12,6 +12,7 @@ use Bpmore\Sweep\Sweeps\Sweeps;
 use Bpmore\Sweep\Sweeps\SweepStore;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response as HttpResponse;
 use Inertia\Response;
 use Statamic\Facades\User;
 use Statamic\Http\Controllers\CP\CpController;
@@ -46,7 +47,7 @@ class SweepController extends CpController
      * Keeps or leaves out one item, or one match in it, while the sweep is a
      * preview.
      */
-    public function select(Request $request, string $sweep, SweepStore $store): RedirectResponse
+    public function select(Request $request, string $sweep, SweepStore $store): RedirectResponse|HttpResponse
     {
         $sweep = $this->open($store, $sweep);
 
@@ -58,7 +59,9 @@ class SweepController extends CpController
         ]);
 
         if ($sweep->status !== Status::Previewed) {
-            return back()->with('error', __('sweep::messages.error_not_a_preview'));
+            return $request->expectsJson()
+                ? response(['message' => __('sweep::messages.error_not_a_preview')], 409)
+                : back()->with('error', __('sweep::messages.error_not_a_preview'));
         }
 
         $item = (int) $values['item'];
@@ -90,7 +93,9 @@ class SweepController extends CpController
             return $records;
         });
 
-        return back();
+        // The results page saves choices in the background, so it is not
+        // sent a page it would only throw away.
+        return $request->expectsJson() ? response()->noContent() : back();
     }
 
     public function apply(string $sweep, SweepStore $store, Sweeps $sweeps): RedirectResponse

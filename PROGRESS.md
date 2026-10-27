@@ -72,7 +72,7 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 
 - [x] Fixtures: multisite, Eloquent driver, Bard with nested sets, Replicator inside Grid inside Bard
 - [x] Performance: 10,000 entries searched in under 60 seconds (6.0 s measured)
-- [ ] axe scan and a keyboard-only walk of every CP screen on `statamic-dev`
+- [x] axe scan and a keyboard-only walk of every CP screen (on the throwaway 6.38 site, same build as `statamic-dev`)
 - [ ] README, editor docs in `docs/`, CHANGELOG, `docs/marketplace.md`, the em dash grep
 - [ ] Install on `greenhouse` with the other bpmore addons: no shared route names, permission handles, nav sections or JS globals
 
@@ -181,3 +181,17 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 - 10,000 entries, each with a title, a markdown field and a Bard field (heading, paragraphs with bold and links, a nested list, a set with a Grid), one in ten matching: searched and the preview written in 6.0 s on Brent's Mac, against the spec's 60 s. 9,000 matches in 1,000 items.
 - Making 10,000 entries in the test takes about 2.5 minutes, so the test is in a `performance` group that `phpunit.xml` leaves out by default. Run it with `vendor/bin/pest --group=performance`. CI runs it once per push, on PHP 8.4, and allows 180 s there since its machines vary.
 - Measured with Testbench's in-memory Stache. A real flat-file site reads from its Stache cache the same way, so this should be close; a cold Stache (first request after a cache clear) will add its own warm-up time on top.
+
+### 2026-10-26: Accessibility pass
+- axe-core 4.10.2 (dev dependency, never shipped) run against every Sweep screen: search, results with diffs and checkboxes, results with split matches, an applied and undone sweep, history, presets; WCAG 2.0, 2.1 and 2.2 A and AA plus best practice; light and dark mode. All twelve runs end with no violations.
+- Found and fixed along the way:
+  - Statamic's radio and checkbox help text on a grey Panel failed contrast (4.24). Panel bodies are now on a white Card, as Statamic lays out its own.
+  - A match left out of the sweep was faded to 60% opacity: contrast 1.3. It now stays full strength, loses its diff colours, and starts with "Left out:"; screen readers no longer hear "removed/added" for it.
+  - `text-gray-600` failed in dark mode (2.15). Replaced by `sweep-muted` and `sweep-error`, set for both modes.
+  - Statamic 6.38's radio and checkbox descriptions keep the same grey in dark mode (3.44). Lifted on Sweep's form only. Worth reporting to Statamic.
+  - Ticking a checkbox moved focus to the page body, because the CP refocuses `#content-card` after every Inertia visit. Choices are now saved in the background (`$axios` PATCH, JSON 204) and the page updated in place, so focus stays on the checkbox. A failed save shows an error and reloads the list.
+  - Opening the Apply or Undo confirmation dropped focus; it now goes to the confirm button, and Cancel returns it to the button that opened it.
+  - The page counter read "Page 1 of 1s": the CP's JS translator filled `:page` inside `:pages`. Placeholders renamed, and a test now refuses any message where one placeholder name starts another.
+- Keyboard walk: every control on the search screen is reached by Tab in reading order with a visible focus ring; checkboxes toggle with Space; the confirm flow works by keyboard alone.
+- How to repeat the scan: copy `node_modules/axe-core/axe.min.js` into a site's `public/`, open a Sweep screen, load it with a script tag and run `axe.run(document, { runOnly: ['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa','best-practice'] })`, once with `dark` on `<html>`.
+- Not automated in CI. That needs a served Statamic app and a browser in CI; Pest 4's browser plugin could do it later.

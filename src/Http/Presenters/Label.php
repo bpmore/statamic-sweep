@@ -17,7 +17,7 @@ final class Label
         return implode(' › ', array_map(static fn (array $part): string => match ($part['kind'] ?? '') {
             'field' => (string) ($part['name'] ?? ''),
             'row' => __('sweep::messages.label_row', ['n' => $part['n'] ?? '']),
-            'set' => __('sweep::messages.label_set', ['n' => $part['n'] ?? '', 'name' => $part['name'] ?? '']),
+            'set' => __('sweep::messages.label_set', ['position' => $part['n'] ?? '', 'name' => $part['name'] ?? '']),
             'block' => __('sweep::messages.label_block', ['n' => $part['n'] ?? '']),
             'link' => __('sweep::messages.label_link'),
             'alt' => __('sweep::messages.label_alt'),

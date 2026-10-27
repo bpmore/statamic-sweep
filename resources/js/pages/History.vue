@@ -66,7 +66,7 @@ const when = (iso) => (iso ? new Date(iso).toLocaleString() : '');
 
     <nav v-if="pages > 1" class="mt-4 flex items-center gap-3" :aria-label="__('sweep::messages.pages')">
         <Button variant="ghost" :disabled="page <= 1" :text="__('sweep::messages.previous')" @click="go(page - 1)" />
-        <Text>{{ __('sweep::messages.page_of', { page, pages }) }}</Text>
+        <Text>{{ __('sweep::messages.page_of', { current: page, total: pages }) }}</Text>
         <Button variant="ghost" :disabled="page >= pages" :text="__('sweep::messages.next')" @click="go(page + 1)" />
     </nav>
 </template>

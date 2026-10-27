@@ -73,3 +73,52 @@
     white-space: pre-wrap;
     overflow-wrap: anywhere;
 }
+
+/* A match left out of the sweep: the text stays full strength, the change
+   is shown as plain text that will not happen, and a label says so. */
+.sweep-diff-off del,
+.sweep-diff-off ins,
+.dark .sweep-diff-off del,
+.dark .sweep-diff-off ins {
+    background: none;
+    color: inherit;
+    text-decoration: none;
+}
+
+.sweep-diff-off ins {
+    display: none;
+}
+
+.sweep-left-out {
+    margin-right: 0.5rem;
+    font-family: inherit;
+    font-weight: 600;
+}
+
+/* Nor does a screen reader hear "removed" and "added" for it. */
+.sweep-diff-off .sr-only {
+    display: none;
+}
+
+/* Secondary text and inline errors, readable in light and dark mode. */
+.sweep-muted {
+    color: rgb(82 82 92);
+}
+
+.sweep-error {
+    color: rgb(185 28 28);
+}
+
+.dark .sweep-muted {
+    color: rgb(212 212 216);
+}
+
+.dark .sweep-error {
+    color: rgb(252 165 165);
+}
+
+/* Statamic 6.38's radio and checkbox descriptions keep the same grey in
+   dark mode, 3.4:1 on the dark card. Lifted on Sweep's own form only. */
+.dark .sweep-search [id$='-description'] {
+    color: rgb(212 212 216);
+}

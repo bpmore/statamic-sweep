@@ -127,6 +127,8 @@ return [
     'results' => 'Results',
     'no_results' => 'Nothing matched.',
     'include_item' => 'Include this item',
+    'error_selection_not_saved' => 'That choice could not be saved, so the list has been reloaded. Try again.',
+    'left_out' => 'Left out:',
     'include_match' => 'Include match :n, ":text"',
     'diff_removed' => 'removed: ',
     'diff_added' => ', added: ',
@@ -136,7 +138,7 @@ return [
     'pages' => 'Pages',
     'previous' => 'Previous',
     'next' => 'Next',
-    'page_of' => 'Page :page of :pages',
+    'page_of' => 'Page :current of :total',
     'error_not_a_preview' => 'This sweep is no longer a preview, so it cannot be changed or applied.',
     'error_not_undoable' => 'This sweep cannot be undone: it is not applied, or the undo period is over.',
 
@@ -150,7 +152,7 @@ return [
     'status_failed' => 'Failed',
 
     'label_row' => 'Row :n',
-    'label_set' => 'Set :n: :name',
+    'label_set' => 'Set :position: :name',
     'label_block' => 'Block :n',
     'label_link' => 'Link',
     'label_alt' => 'Alt text',

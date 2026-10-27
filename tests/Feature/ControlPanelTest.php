@@ -236,3 +236,15 @@ it('fills the search screen in again from an earlier sweep', function () {
             ->where('initial.collections', ['blog'])
             ->where('initial.handles', 'title, intro'));
 });
+
+it('saves a choice in the background without sending a page back', function () {
+    $this->actingAs(($this->person)('sam', [Permissions::USE, Permissions::APPLY]));
+    startSweep();
+    $sweep = app(SweepStore::class)->all()[0];
+
+    $this->patchJson(cp_route('sweep.sweeps.select', $sweep->id), ['item' => 1, 'selected' => false])->assertNoContent();
+    expect(app(SweepStore::class)->readChunk($sweep->id, 1)[1]['selected'])->toBeFalse();
+
+    $this->post(cp_route('sweep.sweeps.apply', $sweep->id));
+    $this->patchJson(cp_route('sweep.sweeps.select', $sweep->id), ['item' => 1, 'selected' => true])->assertStatus(409);
+});
