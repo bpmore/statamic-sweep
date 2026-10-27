@@ -31,4 +31,21 @@ return [
 
     'undo_days' => 30,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Other fieldtypes that hold plain text
+    |--------------------------------------------------------------------------
+    |
+    | Sweep searches Statamic's own text fieldtypes (text, textarea, markdown,
+    | bard, link, list, table, array, video). A fieldtype from an addon is
+    | only searched when its handle is listed here, because Sweep cannot
+    | tell a string of text from a string that is a key, a handle or an id.
+    | List only fieldtypes whose saved value is a string a person wrote.
+    |
+    */
+
+    'fieldtypes' => [
+        // 'seo_title',
+    ],
+
 ];

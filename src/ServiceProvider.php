@@ -31,6 +31,18 @@ class ServiceProvider extends AddonServiceProvider
     // commands, never the repository name.
     protected $viewNamespace = 'sweep';
 
+    public function register(): void
+    {
+        parent::register();
+
+        // Not a singleton: built fresh, so a config change is seen by the next
+        // search in a long-running worker.
+        $this->app->bind(Content\Search::class, fn ($app): Content\Search => new Content\Search(
+            $app->make(Content\Items::class),
+            array_values(array_map('strval', (array) $app['config']->get('sweep.fieldtypes', []))),
+        ));
+    }
+
     public function bootAddon(): void
     {
         $this->bootPermissions();

@@ -8,8 +8,8 @@
 Each one changes a task below. Until it is answered, its task says **(waits on Dn)** and the default is built.
 
 - **D1. Free tier.** Paid only, or free with a 25-item apply limit? Default built: paid only, one edition. The apply limit is one check in one place, so adding it later is small.
-- **D3. Per-site asset alt text (acceptance 9).** Statamic 6.38 has no per-site asset metadata: `Statamic\Assets\Asset` and `AssetContainer` never mention a site or locale, and an asset's alt text is one value shown on every site. So "replaced per site when scoped to one site" cannot happen with core Statamic. Default built: a sweep scoped to some sites leaves assets out entirely, and the search screen will say why. Other options: (b) support a per-site field naming convention, such as `alt_fr`, mapped in config; (c) include assets in site-scoped sweeps anyway, with a warning that the change shows on every site. Recommended: the default, and rewrite acceptance 9 to "A sweep scoped to one site never changes asset metadata, which every site shares."
 - **D2. Redirects.** Offer to create redirects through a detected redirect addon when slugs change, or stay out of URLs? Default built: stay out of URLs. The slug option warns and links to the docs page on redirects.
+- **D3. Per-site asset alt text (acceptance 9).** Statamic 6.38 has no per-site asset metadata: `Statamic\Assets\Asset` and `AssetContainer` never mention a site or locale, and an asset's alt text is one value shown on every site. So "replaced per site when scoped to one site" cannot happen with core Statamic. Default built: a sweep scoped to some sites leaves assets out entirely, and the search screen will say why. Other options: (b) support a per-site field naming convention, such as `alt_fr`, mapped in config; (c) include assets in site-scoped sweeps anyway, with a warning that the change shows on every site. Recommended: the default, and rewrite acceptance 9 to "A sweep scoped to one site never changes asset metadata, which every site shares."
 
 ## Phase 1: Foundations
 
@@ -34,8 +34,8 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 - [x] Globals, per site
 - [x] Navigation: branch titles and URLs, and nav branch fields
 - [x] Asset metadata: alt, title, custom fields. Researched: Statamic 6 has no per-site asset metadata. Built site-neutral; acceptance 9 **(waits on D3)**.
-- [ ] Permission filter: results only include items the user can edit. Acceptance 6.
-- [ ] Slugs, opt-in, with a warning about URLs and redirects
+- [x] Permission filter: results only include items the user can edit. Acceptance 6.
+- [x] Slugs, opt-in, with a warning about URLs and redirects (content side done: entries and terms; the warning itself is in the search screen task)
 
 ## Phase 4: Preview
 
@@ -109,3 +109,12 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 - Searched types: text, textarea, markdown, video, link (URLs only, not `entry::`, `asset::`, `@child`), list, table cells, array values, bard, plus config-named extras. Slug and code only when opted in. Everything else, including select, radio and checkboxes (their values are option keys), is never searched.
 - A Bard field saved as an HTML string is skipped: replacing inside raw HTML can break tags. Rare; to be listed in the docs.
 - For acceptance 4, the plan is an item-level fingerprint at preview time: any edit to the item between preview and apply skips it. Stricter than per-field, and matches the criterion's wording ("changes an entry"). Decide for good in that task.
+
+### 2026-10-26: Content (terms, globals, nav, assets, permissions)
+- Every kind is an `Item` read and written through Statamic's facades, found again by a reference string (`entry::<id>`, `term::<taxonomy>::<slug>::<site>`, `global::<handle>::<site>`, `nav::<handle>::<site>`, `asset::<container>::<path>`).
+- A term's id is its slug in the taxonomy's first site, so a sweep that changes that slug changes the reference. The apply task must record the reference after writing, for undo.
+- Navigation trees are offered to the engine as a Grid called `tree` (title, url, blueprint fields under `data`, `children` as another Grid down to the nav's max depth, default 10). No engine change was needed.
+- Asset metadata is shared by every site in Statamic 6 (D3). A site-scoped sweep leaves assets out.
+- `Content\Search` checks `mayEdit` before reading an item; items a person cannot edit are counted, never walked (acceptance 6). With no person (Artisan) everything in scope is searched.
+- Found and fixed: `FieldTree` loaded every field's fieldtype, so one blueprint field from an uninstalled addon threw and stopped the whole search. It now loads a fieldtype only for Grid, Group, Replicator and Bard.
+- Third-party plain-text fieldtypes are opt-in through `sweep.fieldtypes`.

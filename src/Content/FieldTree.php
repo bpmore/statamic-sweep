@@ -52,16 +52,21 @@ final class FieldTree
 
     private function field(Field $field, int $depth): EngineField
     {
+        // The fieldtype is only loaded for the four types that nest fields.
+        // Loading it for every field would throw on a field whose addon has
+        // been uninstalled, and one stale blueprint would stop the whole
+        // search.
         $type = (string) $field->type();
-        $fieldtype = $field->fieldtype();
         $nested = [];
         $sets = [];
 
         if (in_array($type, ['grid', 'group'], true)) {
-            $nested = $this->fields($fieldtype->fields(), $depth + 1);
+            $nested = $this->fields($field->fieldtype()->fields(), $depth + 1);
         }
 
         if (in_array($type, ['replicator', 'bard'], true)) {
+            $fieldtype = $field->fieldtype();
+
             foreach ($fieldtype->flattenedSetsConfig() as $handle => $config) {
                 $sets[(string) $handle] = [
                     'display' => (string) __($config['display'] ?? $handle),
