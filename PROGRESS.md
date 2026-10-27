@@ -168,3 +168,4 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 - With Brent's go-ahead, `statamic-dev` was updated from Statamic 6.31 to 6.38 (`composer update statamic/cms -W`: 72 updates, 2 installs, 0 removals), which cleared Lifecycle's 6.34 requirement. Sweep is now required there as `@dev` through a path repository to `../statamic-sweep`.
 - Backups of the site's composer files from before the update sit beside them: `composer.json.before-statamic-6.38` and `composer.lock.before-statamic-6.38`.
 - Checked signed in as a super admin: dashboard, collections, utilities, Lifecycle, and Sweep's search, history and presets pages all return 200. Logged out, the site's home page and CP login return 200.
+- Brent tried Sweep on statamic-dev's real content the same day: looks good.
