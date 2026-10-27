@@ -41,9 +41,9 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 
 - [x] Sweep store: one YAML file per sweep in `storage/sweep/<id>.yaml` (items, field paths, before, after, selection, counts, status, who, when). Items are in YAML chunks beside it, see Notes.
 - [x] Size check: a preview with 50,000 matches stays under 50 MB (33.6 MB in the worst case: every match in its own 10 KB field)
-- [ ] Search runs as a queued job in chunks, writing results as each chunk finishes, with progress
-- [ ] Counts: items matched, matches total, split matches, items skipped for permission
-- [ ] `sweep:run --find= --replace= [--regex] [--scope=collection:blog] [--dry-run]` writes a preview and prints counts
+- [x] Search runs as a queued job in chunks, writing results as each chunk finishes, with progress
+- [x] Counts: items matched, matches total, split matches, items skipped for permission
+- [x] `sweep:run --find= --replace= [--regex] [--scope=collection:blog] [--dry-run]` writes a preview and prints counts
 
 ## Phase 5: Apply
 
@@ -124,3 +124,9 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 - **Before values are hashed, not always stored.** Keeping every before string whole makes size grow with field length: 50,000 matches in 10 KB markdown fields would be about 500 MB. A change keeps a SHA-256 of its before string, 40 bytes of context each side of each hit, and the whole string only when it is under 4 KB. Apply works on the current value once its hash matches; undo rebuilds the before value from the current one with `Matcher::revert` and checks it against the hash. Byte-identical by construction and by check. Worst case measured at 33.6 MB.
 - YAML strings round-trip byte for byte, including CRLF, trailing newlines, NUL, numeric-looking strings and `null`/`~`/`yes` (test). Literal blocks also round-tripped in Symfony 7; quoted forms are kept anyway.
 - Ids are lowercase ULIDs, and the store refuses anything else, so an id from a URL can never reach another path.
+
+### 2026-10-26: Search job, counts, sweep:run
+- `Sweeps\Sweeps` is the one way in for the CP and Artisan. `start()` records the sweep and queues `Jobs\SearchSweep`; `now: true` runs it inline for Artisan.
+- A queued search runs as the person who started it (permission filter). If that account is deleted before the job runs, the sweep fails instead of searching as nobody, which would show them everything.
+- Progress is written every 50 items and each chunk of 100 found items as it fills, so the CP can show early results. No total is known up front: counting first would read the site twice.
+- `sweep:run` without `--apply` is a dry run, whether or not `--dry-run` is passed. `--word` was added beside `--regex`, plus `--ignore-case`, `--preserve-case`, `--slugs`, `--code`; `--scope` repeats. `--apply` arrives with Phase 5.

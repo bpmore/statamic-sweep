@@ -18,6 +18,10 @@ use Statamic\Providers\AddonServiceProvider;
  */
 class ServiceProvider extends AddonServiceProvider
 {
+    protected $commands = [
+        Commands\RunSweep::class,
+    ];
+
     protected $routes = [
         'cp' => __DIR__.'/../routes/cp.php',
     ];
@@ -34,6 +38,10 @@ class ServiceProvider extends AddonServiceProvider
     public function register(): void
     {
         parent::register();
+
+        $this->app->bind(Sweeps\SweepStore::class, fn ($app): Sweeps\SweepStore => new Sweeps\SweepStore(
+            (string) $app['config']->get('sweep.path', storage_path('sweep')),
+        ));
 
         // Not a singleton: built fresh, so a config change is seen by the next
         // search in a long-running worker.

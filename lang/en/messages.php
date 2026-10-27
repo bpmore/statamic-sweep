@@ -18,4 +18,16 @@ return [
 
     'search_title' => 'Search and replace',
     'search_intro' => 'Find text across the site, preview every change, then apply the ones you want.',
+
+    'error_starter_gone' => 'The person who started this sweep no longer has an account, so it was not searched. Start a new sweep.',
+
+    'count_searched' => 'Items searched',
+    'count_matched_items' => 'Items matched',
+    'count_matches' => 'Matches',
+    'count_splits' => 'Split matches (edit by hand)',
+    'count_skipped_for_permission' => 'Items you may not edit (not searched)',
+
+    'cli_regex_and_word' => 'Choose --regex or --word, not both. In a regular expression, use \\b for a word boundary.',
+    'cli_previewed' => 'Preview saved as sweep :id. Nothing has been changed yet.',
+    'cli_item_failed' => 'Could not search ":title": :message',
 ];

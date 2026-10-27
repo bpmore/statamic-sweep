@@ -33,42 +33,55 @@ final class Search
 
     /**
      * @param  callable(Item, Result, string): void  $found  the item, what matched, and its fingerprint
+     * @param  (callable(Tally): void)|null  $progress  called after each item, with the counts so far
      */
-    public function run(Query $query, Scope $scope, ?User $user, callable $found): Tally
+    public function run(Query $query, Scope $scope, ?User $user, callable $found, ?callable $progress = null): Tally
     {
         $walker = new Walker(new Matcher($query), $scope->engineOptions($this->extraTypes));
         $tree = new FieldTree;
         $tally = new Tally;
 
         foreach ($this->items->in($scope) as $item) {
-            if ($user !== null && ! $item->mayEdit($user)) {
-                $tally->skippedForPermission++;
+            $this->one($item, $walker, $tree, $tally, $user, $found);
 
-                continue;
+            if ($progress !== null) {
+                $progress($tally);
             }
-
-            $tally->searched++;
-            $data = $item->data();
-
-            try {
-                $result = $walker->walk($data, $item->fields($tree));
-            } catch (RuntimeException $e) {
-                $tally->failures[] = ['reference' => $item->reference(), 'title' => $item->title(), 'message' => $e->getMessage()];
-
-                continue;
-            }
-
-            if ($result->isEmpty()) {
-                continue;
-            }
-
-            $tally->matchedItems++;
-            $tally->matches += $result->matchCount();
-            $tally->splits += count($result->splits);
-
-            $found($item, $result, Fingerprint::of($data));
         }
 
         return $tally;
+    }
+
+    /**
+     * @param  callable(Item, Result, string): void  $found
+     */
+    private function one(Item $item, Walker $walker, FieldTree $tree, Tally $tally, ?User $user, callable $found): void
+    {
+        if ($user !== null && ! $item->mayEdit($user)) {
+            $tally->skippedForPermission++;
+
+            return;
+        }
+
+        $tally->searched++;
+        $data = $item->data();
+
+        try {
+            $result = $walker->walk($data, $item->fields($tree));
+        } catch (RuntimeException $e) {
+            $tally->failures[] = ['reference' => $item->reference(), 'title' => $item->title(), 'message' => $e->getMessage()];
+
+            return;
+        }
+
+        if ($result->isEmpty()) {
+            return;
+        }
+
+        $tally->matchedItems++;
+        $tally->matches += $result->matchCount();
+        $tally->splits += count($result->splits);
+
+        $found($item, $result, Fingerprint::of($data));
     }
 }
