@@ -1,6 +1,6 @@
 # PROGRESS: Sweep
 
-**Spec:** `docs/SPECS.md` · **Conventions:** `docs/CONVENTIONS.md` · **Package:** `bpmore/statamic-sweep` · **$39**
+**Spec:** `docs/SPECS.md` · **Conventions:** `docs/CONVENTIONS.md` · **Package:** `bpmore/statamic-sweep` · **$29**
 **Rule:** do the next unfinished task only, then update this file, verify the build, and commit.
 
 ## Decisions waiting on Brent
@@ -207,3 +207,4 @@ Each one changes a task below. Until it is answered, its task says **(waits on D
 - 2026-10-27, after release: repo public and on Packagist (`v1.0.0`). Making it public unblocked GitHub Actions, and CI run 40498652528 on the release commit passed every job: formatting, PHP 8.2, 8.3, 8.4, 8.5, lowest dependencies and the control panel build. A fresh Statamic 6.38 site installed Sweep with plain `composer require bpmore/statamic-sweep`. Left for the Marketplace: the six screenshots.
 - 2026-10-27, Marketplace screenshots: six 1440x900 shots in `docs/screenshots`, taken from a fresh site that installed `v1.0.0` from Packagist, with demo content (Harbor Coffee renamed to Tidewater Coffee). Left out of the download. Two small display bugs seen in 1.0.0, not fixed: a split match line has no space after its colon when the context starts the field ("Block 2:Ask"), and history says "1 matches in 1 items".
 - 2026-10-27, 1.0.1: fixed both display bugs. Counted messages now use Statamic's `__n` (checked in the browser: it is a global in Statamic 6.38) and `trans_choice` for `sweep:prune`, through new `n_items`, `n_matches`, `n_sweeps` and `n_days` messages (`count_matches` was already taken by a heading). Split match lines get an explicit space after the label. Screenshots retaken from 1.0.1.
+- 2026-10-28: price set to $29 per site (was $39 in the spec). Listing copy updated.

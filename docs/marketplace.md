@@ -15,7 +15,7 @@ Copy for the Statamic Marketplace listing.
 
 ## Price
 
-$39 per site. One edition.
+$29 per site. One edition.
 
 ## One-liner
 
