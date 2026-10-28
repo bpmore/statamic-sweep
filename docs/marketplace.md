@@ -80,8 +80,8 @@ permissions.
 come in; 10,000 entries take seconds. `sweep:run` does the same from the
 command line.
 
-Built to WCAG 2.2 AA: every screen works by keyboard and passes an axe scan
-in light and dark mode.
+Every screen works by keyboard and passes an axe accessibility scan in light
+and dark mode.
 
 ## Features (short list)
 
