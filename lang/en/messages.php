@@ -144,6 +144,8 @@ return [
     'next' => 'Next',
     'page_of' => 'Page :current of :total',
     'error_not_a_preview' => 'This sweep is no longer a preview, so it cannot be changed or applied.',
+    'error_no_such_match' => 'There is no such match in this sweep, so nothing was changed. Reload the page and try again.',
+    'error_damaged_record' => 'The preview record of this item is damaged, so it was not changed. Search again to make a new preview.',
     'error_not_undoable' => 'This sweep cannot be undone: it is not applied, or the undo period is over.',
 
     'status_searching' => 'Searching',

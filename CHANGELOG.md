@@ -4,6 +4,19 @@ What changed in each release, and what you have to do about it.
 
 Versions are `MAJOR.MINOR.PATCH`.
 
+## Unreleased
+
+Nothing to do when updating.
+
+- Choosing a match that is not in the preview (a request naming a change or
+  hit index the search never found) is refused with an error, instead of
+  writing an empty change into the sweep. Such a change used to take down the
+  results page, and stop the apply halfway with the items already changed
+  left out of the record, so the sweep could not be undone.
+- An item whose stored record cannot be read is marked "Could not be saved"
+  and the rest of the sweep is applied and recorded, so it can be undone.
+- The results page leaves out a damaged change rather than failing on it.
+
 ## 1.0.1 - 2026-10-27
 
 Wording fixes. Nothing to do when updating.

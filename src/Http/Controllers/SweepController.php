@@ -68,30 +68,44 @@ class SweepController extends CpController
         $chunk = intdiv($item, SweepStore::CHUNK) + 1;
         $offset = $item % SweepStore::CHUNK;
         $selected = (bool) $values['selected'];
+        $found = false;
 
-        $store->updateChunk($sweep->id, $chunk, function (array $records) use ($offset, $values, $selected): array {
-            if (! isset($records[$offset])) {
+        $store->updateChunk($sweep->id, $chunk, function (array $records) use ($offset, $values, $selected, &$found): array {
+            if (! is_array($records[$offset] ?? null)) {
                 return $records;
             }
 
             if (isset($values['change'])) {
-                $hit = &$records[$offset]['changes'][(int) $values['change']]['hits'][(int) $values['hit']];
+                $change = (int) $values['change'];
+                $hit = (int) $values['hit'];
 
-                if (is_array($hit)) {
-                    $hit['selected'] = $selected;
+                // Looked up, never referenced: a reference to a missing index
+                // would create it, and an empty change with a null hit in it
+                // is something neither the apply nor the results page can read.
+                if (! is_array($records[$offset]['changes'][$change]['hits'][$hit] ?? null)) {
+                    return $records;
                 }
-                unset($hit);
+
+                $found = true;
+                $records[$offset]['changes'][$change]['hits'][$hit]['selected'] = $selected;
 
                 // Choosing a match in an item left out brings the item back.
                 if ($selected) {
                     $records[$offset]['selected'] = true;
                 }
             } else {
+                $found = true;
                 $records[$offset]['selected'] = $selected;
             }
 
             return $records;
         });
+
+        if (! $found) {
+            return $request->expectsJson()
+                ? response(['message' => __('sweep::messages.error_no_such_match')], 422)
+                : back()->with('error', __('sweep::messages.error_no_such_match'));
+        }
 
         // The results page saves choices in the background, so it is not
         // sent a page it would only throw away.

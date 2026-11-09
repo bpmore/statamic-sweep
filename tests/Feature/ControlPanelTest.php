@@ -167,6 +167,49 @@ it('lets the starter leave out a match or an item before applying', function () 
     expect(app(SweepStore::class)->readChunk($sweep->id, 1)[1]['selected'])->toBeFalse();
 });
 
+it('refuses a match the preview never found, and leaves the sweep as it was', function () {
+    $this->actingAs(($this->person)('sam', [Permissions::USE, Permissions::APPLY]));
+    startSweep();
+    $sweep = app(SweepStore::class)->all()[0];
+    $before = app(SweepStore::class)->readChunk($sweep->id, 1);
+
+    // A hit, a change and an item that are not in the sweep. Each used to be
+    // created by the lookup, as an empty change with a null hit, and the
+    // results page and the apply then fell over it.
+    $this->patchJson(cp_route('sweep.sweeps.select', $sweep->id), ['item' => 0, 'change' => 0, 'hit' => 7, 'selected' => false])->assertStatus(422);
+    $this->patchJson(cp_route('sweep.sweeps.select', $sweep->id), ['item' => 0, 'change' => 3, 'hit' => 0, 'selected' => false])->assertStatus(422);
+    $this->patchJson(cp_route('sweep.sweeps.select', $sweep->id), ['item' => 99, 'selected' => false])->assertStatus(422);
+    $this->patch(cp_route('sweep.sweeps.select', $sweep->id), ['item' => 0, 'change' => 3, 'hit' => 0, 'selected' => false])->assertRedirect()->assertSessionHas('error');
+
+    expect(app(SweepStore::class)->readChunk($sweep->id, 1))->toBe($before);
+
+    $this->get(cp_route('sweep.sweeps.show', $sweep->id))->assertOk();
+    $this->post(cp_route('sweep.sweeps.apply', $sweep->id))->assertRedirect();
+
+    expect(Entry::find('b1')->get('title'))->toBe('Apex Apex')
+        ->and(app(SweepStore::class)->find($sweep->id)->status)->toBe(Status::Applied);
+});
+
+it('shows a sweep whose stored record is damaged, rather than failing', function () {
+    $this->actingAs(($this->person)('sam', [Permissions::USE]));
+    startSweep();
+    $sweep = app(SweepStore::class)->all()[0];
+
+    // What an unchecked lookup used to leave behind.
+    app(SweepStore::class)->updateChunk($sweep->id, 1, function (array $records): array {
+        $records[0]['changes'][3] = ['hits' => [2 => null]];
+
+        return $records;
+    });
+
+    $this->get(cp_route('sweep.sweeps.show', $sweep->id))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('sweep/Sweep')
+            ->has('items.data.0.changes', 2)
+            ->where('items.data.0.changes.1.hits', []));
+});
+
 it('needs apply sweep to apply, and undo sweep to undo', function () {
     $this->actingAs(($this->person)('sam', [Permissions::USE]));
     startSweep();
