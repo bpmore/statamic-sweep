@@ -92,17 +92,20 @@ final class SweepPresenter
             'outcome' => $record['outcome'] ?? null,
             'outcome_message' => $record['outcome_message'] ?? null,
             'undo' => $record['undo'] ?? null,
+            // A change or hit that is not an array is not something the
+            // preview wrote. It is left out rather than taking the page down:
+            // apply marks the item as failed and says why.
             'changes' => array_map(static fn (array $change): array => [
                 'label' => Label::words($change['label'] ?? []),
                 'undo' => $change['undo'] ?? null,
                 'hits' => array_map(static fn (array $hit): array => [
                     'before' => $hit['context_before'] ?? '',
-                    'text' => $hit['text'],
-                    'replacement' => $hit['replacement'],
+                    'text' => $hit['text'] ?? '',
+                    'replacement' => $hit['replacement'] ?? '',
                     'after' => $hit['context_after'] ?? '',
                     'selected' => ($hit['selected'] ?? true) !== false,
-                ], $change['hits'] ?? []),
-            ], $record['changes'] ?? []),
+                ], array_values(array_filter((array) ($change['hits'] ?? []), 'is_array'))),
+            ], array_values(array_filter((array) ($record['changes'] ?? []), 'is_array'))),
             'splits' => array_map(static fn (array $split): array => [
                 'label' => Label::words($split['label'] ?? []),
                 'text' => $split['text'],

@@ -64,6 +64,41 @@ function sweepOutcomes(Sweep $sweep): array
     return collect(iterator_to_array(app(SweepStore::class)->records($sweep)))->pluck('outcome', 'reference')->all();
 }
 
+it('fails one item whose stored record is damaged, applies the rest, and can still undo them', function () {
+    makePage('p1', ['title' => 'Acme one']);
+    makePage('p2', ['title' => 'Acme two']);
+    $sweep = previewSweep();
+
+    // A change the preview never wrote: no path, no hash, a hit that is not
+    // an array. It used to throw out of the apply halfway through, leaving
+    // the sweep "applying" for ever, with the items already written in that
+    // chunk unrecorded and so beyond undo.
+    app(SweepStore::class)->updateChunk($sweep->id, 1, function (array $records): array {
+        $records[0]['changes'][3] = ['hits' => [2 => null]];
+
+        return $records;
+    });
+    $damaged = app(SweepStore::class)->readChunk($sweep->id, 1)[0]['reference'];
+    $other = $damaged === 'entry::p1' ? 'entry::p2' : 'entry::p1';
+
+    $sweep = applySweep($sweep, $this->admin);
+
+    expect($sweep->status)->toBe(Status::Applied)
+        ->and(sweepOutcomes($sweep))->toEqualCanonicalizing([$damaged => Applier::FAILED, $other => Applier::APPLIED])
+        ->and($sweep->applyTally[Applier::FAILED])->toBe(1)
+        ->and($sweep->applyTally[Applier::APPLIED])->toBe(1)
+        ->and(Entry::find(substr($damaged, 7))->get('title'))->toStartWith('Acme')
+        ->and(Entry::find(substr($other, 7))->get('title'))->toStartWith('Apex')
+        ->and(app(Sweeps::class)->undoable($sweep))->toBeTrue();
+
+    $failed = collect(iterator_to_array(app(SweepStore::class)->records($sweep)))->firstWhere('reference', $damaged);
+    expect($failed['outcome_message'])->toBe(__('sweep::messages.error_damaged_record'));
+
+    expect(app(Sweeps::class)->undo($sweep, $this->admin, now: true))->toBeTrue()
+        ->and(app(SweepStore::class)->find($sweep->id)->status)->toBe(Status::Undone)
+        ->and(Entry::find(substr($other, 7))->get('title'))->toStartWith('Acme');
+});
+
 it('changes only the bold text in Bard and keeps the mark, end to end: acceptance 1', function () {
     $body = [['type' => 'paragraph', 'content' => [
         ['type' => 'text', 'text' => 'We are '],

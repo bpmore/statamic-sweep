@@ -96,7 +96,17 @@ final class Applier
             for ($chunk = 1; $chunk <= $sweep->chunks; $chunk++) {
                 $this->store->updateChunk($sweep->id, $chunk, function (array $records) use ($sweep, $user, &$tally, &$wrote): array {
                     foreach ($records as $i => $record) {
-                        $records[$i] = $this->applyOne($sweep, $record, $user);
+                        // One item that cannot be applied, for whatever
+                        // reason, is one failed item. Letting it out of the
+                        // loop would leave the chunk unwritten, the items
+                        // already changed in it unrecorded, and so the sweep
+                        // half applied with nothing to undo.
+                        try {
+                            $records[$i] = $this->applyOne($sweep, $record, $user);
+                        } catch (Throwable $e) {
+                            $records[$i] = [...$record, 'outcome' => self::FAILED, 'outcome_message' => $e->getMessage()];
+                        }
+
                         $tally[$records[$i]['outcome']]++;
                         $wrote = $wrote || $records[$i]['outcome'] === self::APPLIED;
                     }
@@ -259,6 +269,13 @@ final class Applier
     {
         $record['outcome_message'] = null;
 
+        // Checked before anything is read from the changes: a change without
+        // a path, or a hit that is not an array, is not something the
+        // preview wrote, and nothing below is safe to run on it.
+        if (! self::wellFormed($record)) {
+            return [...$record, 'outcome' => self::FAILED, 'outcome_message' => __('sweep::messages.error_damaged_record')];
+        }
+
         if (($record['selected'] ?? true) === false || ! self::anySelected($record)) {
             return [...$record, 'outcome' => self::DESELECTED];
         }
@@ -351,6 +368,34 @@ final class Applier
     }
 
     /**
+     * Whether a record's changes have the shape SweepStore::record() writes:
+     * each with a path and a before hash, each hit an array with its offset,
+     * length, text and replacement.
+     *
+     * @param  array<string, mixed>  $record
+     */
+    private static function wellFormed(array $record): bool
+    {
+        if (! is_array($record['changes'] ?? [])) {
+            return false;
+        }
+
+        foreach ($record['changes'] ?? [] as $change) {
+            if (! is_array($change) || ! is_array($change['path'] ?? null) || ! is_string($change['before_hash'] ?? null) || ! is_array($change['hits'] ?? [])) {
+                return false;
+            }
+
+            foreach ($change['hits'] ?? [] as $hit) {
+                if (! is_array($hit) || ! is_int($hit['offset'] ?? null) || ! is_int($hit['length'] ?? null) || ! is_string($hit['text'] ?? null) || ! is_string($hit['replacement'] ?? null)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * @param  array<string, mixed>  $record
      */
     private static function anySelected(array $record): bool
@@ -373,7 +418,7 @@ final class Applier
         $hits = [];
 
         foreach ($change['hits'] ?? [] as $hit) {
-            if (($hit['selected'] ?? true) !== false) {
+            if (is_array($hit) && ($hit['selected'] ?? true) !== false) {
                 $hits[] = new Hit((int) $hit['offset'], (int) $hit['length'], (string) $hit['text'], (string) $hit['replacement']);
             }
         }
